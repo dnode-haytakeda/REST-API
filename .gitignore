@@ -1,0 +1,46 @@
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+coverage/
+.cache/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# Runtime
+*.pid
+*.pid.lock
+*.seed
+*.pid
+*.pid.lock
+
+# OS / temp
+tmp/
+temp/
+*.tmp
+*.bak
+*.old
+*.orig
+
