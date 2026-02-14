@@ -1,5 +1,5 @@
-Backend 手順書（Node.js + Express）
-==================================
+Backend 手順書（Node.js + Express + MySQL 連携）
+==============================================
 
 この手順書は「何をどのファイルに書くのか」「なぜそこに書くのか」「何をしているのか」を
 段階的に理解できるようにしたものです。最終的には API サーバーが動く最小構成を作り、
@@ -9,6 +9,7 @@ Backend 手順書（Node.js + Express）
 ----
 - Node.js (LTS) が入っていること
 - ここでは CommonJS で書く想定（TypeScript ではなく JavaScript）
+- DB は Docker Hub の MySQL 公式イメージを使用する（db/README.md 参照）
 
 ディレクトリ構成（目的）
 ------------------------
@@ -36,6 +37,7 @@ npm init -y
 2) 依存追加
 ```
 npm i express dotenv cors morgan
+npm i mysql2
 npm i -D nodemon
 ```
 
@@ -175,7 +177,38 @@ const getEnv = (key, fallback) => {
 module.exports = { getEnv };
 ```
 
-手順 8: バリデーション
+手順 8: DB 接続
+--------------
+理由: DB 接続情報とコネクションプールを分離し、再利用しやすくするため。
+
+src/config/db.js
+```
+const mysql = require("mysql2/promise");
+const { getEnv } = require("./env");
+
+const pool = mysql.createPool({
+  host: getEnv("DB_HOST", "127.0.0.1"),
+  port: Number(getEnv("DB_PORT", "3306")),
+  user: getEnv("DB_USER", "app"),
+  password: getEnv("DB_PASSWORD", "app_password"),
+  database: getEnv("DB_NAME", "app_db"),
+  connectionLimit: 10,
+});
+
+module.exports = { pool };
+```
+
+backend/.env（例）
+```
+PORT=3000
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=app
+DB_PASSWORD=app_password
+DB_NAME=app_db
+```
+
+手順 9: バリデーション
 ---------------------
 理由: 入力不正を早期に弾き、サービス層を安全にするため。
 
@@ -191,21 +224,81 @@ const validateName = (name) => {
 module.exports = { validateName };
 ```
 
-手順 9: モデル（DB 連携）
-------------------------
+手順 10: モデル（DB 連携）
+-------------------------
 理由: DB 操作を一箇所にまとめ、コントローラから切り離すため。
 
-src/models/exampleModel.js
+src/models/userModel.js
 ```
+const { pool } = require("../config/db");
+
 const findAll = async () => {
-	// 実際の DB 実装はここに書く
-	return [];
+	const [rows] = await pool.query("SELECT id, name, email, created_at FROM users");
+	return rows;
 };
 
 module.exports = { findAll };
 ```
 
-手順 10: 起動スクリプト
+手順 11: サービス（DB を利用）
+-----------------------------
+理由: データ取得をサービス層で組み立て、コントローラを薄くするため。
+
+src/services/userService.js
+```
+const { findAll } = require("../models/userModel");
+
+const listUsers = async () => {
+	return findAll();
+};
+
+module.exports = { listUsers };
+```
+
+手順 12: コントローラ（DB を利用）
+---------------------------------
+理由: HTTP 入出力だけに責務を限定するため。
+
+src/controllers/userController.js
+```
+const { listUsers } = require("../services/userService");
+
+const getUsers = async (req, res, next) => {
+	try {
+		const users = await listUsers();
+		res.status(200).json(users);
+	} catch (err) {
+		next(err);
+	}
+};
+
+module.exports = { getUsers };
+```
+
+手順 13: ルーティング（DB を利用）
+---------------------------------
+理由: DB を使う API をエンドポイントとして公開するため。
+
+src/routes/users.js
+```
+const express = require("express");
+const { getUsers } = require("../controllers/userController");
+
+const router = express.Router();
+
+router.get("/", getUsers);
+
+module.exports = router;
+```
+
+src/routes/index.js に追加
+```
+const userRoutes = require("./users");
+
+router.use("/users", userRoutes);
+```
+
+手順 14: 起動スクリプト
 ----------------------
 理由: 開発と本番で起動方法を切り替えるため。
 
