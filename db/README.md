@@ -116,7 +116,7 @@ COMMIT;
 
 解説（migration の目的）
 - 変更履歴として時系列に適用する
-- BEGIN/COMMIT で「途中で失敗したら全部取り消す」単位にする
+- BEGIN/COMMIT で DML（INSERT/UPDATE など）は「途中で失敗したら全部取り消す」単位にする（※MySQL の CREATE TABLE など DDL はトランザクション対象外で、暗黙の COMMIT が発生する点に注意）
 
 解説（この SQL の意味）
 - CREATE TABLE: テーブル（データの入れ物）を新規作成する
