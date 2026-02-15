@@ -35,7 +35,7 @@ const postUser = async (req, res, next) => {
       return res.status(400).json({ message: "name and email are required" });
     }
     const user = await createUser(name, email);
-    res.status(200).json(user);
+    res.status(201).json(user);
   } catch (err) {
     next(err);
   }
