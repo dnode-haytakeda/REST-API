@@ -49,7 +49,7 @@ const putUser = async (req, res, next) => {
     }
     const user = await updateUser(req.params.id, name, email);
     if (!user) {
-      return res.status(404).josn({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
     res.status(200).json(user);
   } catch (err) {
