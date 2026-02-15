@@ -1,0 +1,41 @@
+### 変数定義
+@baseUrl = http://localhost:3000/api
+@userId = 1
+
+### ヘルスチェック
+GET {{baseUrl}}/health
+
+### ユーザー一覧取得（Read All）
+GET {{baseUrl}}/users
+
+### ユーザー詳細取得（Read One）
+GET {{baseUrl}}/users/{{userId}}
+
+### ユーザー作成（Create）
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "Charlie",
+  "email": "charlie@example.com"
+}
+
+### ユーザー更新（Update）
+PUT {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+
+{
+  "name": "Charlie Updated",
+  "email": "charlie.new@example.com"
+}
+
+### ユーザー部分更新（Partial Update）
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+
+{
+  "name": "Charlie Patched"
+}
+
+### ユーザー削除（Delete）
+DELETE {{baseUrl}}/users/{{userId}}
