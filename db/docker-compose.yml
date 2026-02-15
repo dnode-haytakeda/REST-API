@@ -13,7 +13,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -u ${MYSQL_USER} -p${MYSQL_PASSWORD}",
+          "mysqladmin ping -h 127.0.0.1 -u ${MYSQL_USER} -p${MYSQL_PASSWORD}"
         ]
       interval: 10s
       timeout: 5s
