@@ -745,6 +745,496 @@ li {
 **Q: 「モジュールが見つからない」エラーが出る**
 - A: 手順を飛ばしていないか確認 → 順番通り実行
 
+コード解説：React と CSS の理解を深める
+====================================
+
+このセクションでは、このアプリで使われているコードの詳細な解説を行います。
+
+React の重要な概念
+------------------
+
+### **1. State（状態）とは？**
+
+State は「**コンポーネントが記憶する値**」です。State が変わると、画面が自動的に再描画されます。
+
+**例：UserForm.jsx**
+```javascript
+const [name, setName] = useState("");
+```
+
+| 変数 | 役割 |
+|------|------|
+| `name` | 現在の値を読み取る |
+| `setName` | 値を変更する関数 |
+| `""` | 初期値（最初は空） |
+
+**動作フロー：**
+```
+ユーザー入力 → onChange 発火 → setName() 実行 → name が更新される
+  ↓
+value={name} が反応 → 画面が再描画される
+```
+
+### **2. Props（プロパティ）とは？**
+
+Props は「**親コンポーネントが子コンポーネントに渡すデータや関数**」です。
+
+**例：App.jsx から UserForm.jsx へ**
+```jsx
+// App.jsx（親）
+<UserForm onSubmit={handleCreate} />
+
+// UserForm.jsx（子）
+const UserForm = ({ onSubmit }) => {
+  // onSubmit は親から渡された handleCreate 関数
+  await onSubmit(name, email);  // これが親の処理を実行
+}
+```
+
+**親子関係：**
+```
+App.jsx（親）
+  ↓ onSubmit={handleCreate} を渡す
+UserForm.jsx（子）
+  ↓ onSubmit として受け取る
+  ↓ フォーム送信時に実行
+  ↓
+App.jsx の handleCreate が実行される
+  ↓
+バックエンド API に通信
+```
+
+### **3. 制御コンポーネント（Controlled Component）**
+
+React が入力欄の値を完全に管理する方式です。
+
+```jsx
+<input
+  value={name}  // React の状態で値を表示
+  onChange={(e) => setName(e.target.value)}  // 入力で状態を更新
+/>
+```
+
+**メリット：**
+- どの値がフォームに入っているか、一目瞭然
+- React がすべてコントロール
+
+### **4. 非同期処理（async/await）**
+
+時間がかかる処理（API 通信など）を待つ書き方です。
+
+```javascript
+const handleSubmit = async (e) => {
+  setLoading(true);  // 送信開始を示す
+  try {
+    await onSubmit(name, email);  // 親の処理を待つ
+    // ここは parent の handleCreate で API 通信が完了してから実行される
+    setName("");  // 成功したらクリア
+  } finally {
+    setLoading(false);  // 成功でも失敗でも必ず実行
+  }
+};
+```
+
+**重要なポイント：**
+- `await` で「この処理が終わるまで待つ」
+- `finally` で「成功でも失敗でも絶対に実行」
+- エラーハンドリングで、API がダウンしていても大丈夫
+
+CSS の重要な概念
+----------------
+
+### **1. ボックスモデル**
+
+HTML の全要素は「箱」として扱われます。
+
+```
+┌─────────────────────────────┐
+│    margin（外側の余白）        │
+│  ┌──────────────────────┐   │
+│  │  border（枠線）       │   │
+│  │  ┌────────────────┐  │   │
+│  │  │ padding(内側の余白)  │  │
+│  │  │ ┌──────────┐  │  │   │
+│  │  │ │コンテンツ │  │  │   │
+│  │  │ └──────────┘  │  │   │
+│  │  └────────────────┘  │   │
+│  └──────────────────────┘   │
+└─────────────────────────────┘
+```
+
+### **2. Padding（内側の余白）**
+
+**意味：** コンテンツと枠線の間の距離
+
+```css
+button {
+  padding: 0.5rem 1rem;  /* 上下: 0.5rem, 左右: 1rem */
+}
+```
+
+**動作：**
+```
+padding: 0.5rem だと
+┌──────────────┐
+│ ●  [作成]  ● │
+└──────────────┘
+
+padding: 2rem だと
+┌────────────────────────┐
+│ ●                    ● │
+│ ●      [作成]       ● │
+│ ●                    ● │
+└────────────────────────┘
+```
+
+### **3. Border（枠線）**
+
+**意味：** 要素の周りに引く線
+
+```css
+border: 1px solid #ccc;
+```
+
+| 部分 | 意味 |
+|------|------|
+| `1px` | 線の太さ |
+| `solid` | スタイル（実線） |
+| `#ccc` | 色（グレー） |
+
+### **4. Margin（外側の余白）**
+
+**意味：** 要素と他の要素の間の距離
+
+```css
+section {
+  margin: 2rem 0;  /* 上下: 2rem, 左右: 0 */
+}
+```
+
+### **5. 疑似クラス（Pseudo-class）：要素の状態によるスタイル**
+
+要素の**状態**に応じてスタイルを変える書き方です。
+
+```css
+/* 通常の状態 */
+button {
+  background: #007bff;
+  cursor: pointer;
+}
+
+/* マウスを乗せた時 */
+button:hover {
+  background: #0056b3;  /* より濃い青 */
+}
+
+/* クリックされている時 */
+button:active {
+  opacity: 0.8;  /* 少し薄くなる */
+}
+
+/* disabled 属性がある時 */
+button:disabled {
+  background: #ccc;  /* グレー */
+  cursor: not-allowed;  /* 禁止マーク */
+}
+```
+
+**疑似クラス：**
+
+| 疑似クラス | 条件 | 例 |
+|-----------|------|-----|
+| `:hover` | マウスを乗せた時 | 色を変える |
+| `:active` | クリック中 | 少し縮ませる |
+| `:disabled` | disabled 属性がある | グレーアウト |
+| `:focus` | フォーカスされた時 | 枠線を色付け |
+
+### **6. Flexbox（要素の配置）**
+
+要素を横並びや縦並びにする方法です。
+
+```css
+form {
+  display: flex;
+  flex-direction: column;  /* 縦並び */
+  gap: 1rem;  /* 要素間の距離 */
+}
+```
+
+```css
+li {
+  display: flex;
+  justify-content: space-between;  /* 両端に配置 */
+  align-items: center;  /* 縦方向に中央揃え */
+}
+```
+
+**結果：**
+```
+flex-direction: column （縦並び）
+┌──────────────┐
+│  ┌────────┐  │
+│  │ 要素1  │  │
+│  └────────┘  │
+│              │ ← gap: 1rem
+│  ┌────────┐  │
+│  │ 要素2  │  │
+│  └────────┘  │
+└──────────────┘
+
+justify-content: space-between （両端）
+┌──────────────────────────────┐
+│ [要素1] ← 距離 → [要素2]     │
+└──────────────────────────────┘
+```
+
+### **7. Border-radius（角丸）**
+
+要素の角を丸くします。
+
+```css
+button {
+  border-radius: 4px;  /* 4px の半径で丸くなる */
+}
+```
+
+```
+border-radius: 0px    border-radius: 4px   border-radius: 50%
+┌──────────┐         ┌──────────┐         ◯
+│          │         ╱          ╲         
+│          │        │            │
+└──────────┘        ╲__________╱
+```
+
+実際の動作フロー
+----------------
+
+### **ユーザーが「作成」をクリック → 登録まで**
+
+```
+【ブラウザ で】
+1. 「太郎」を名前欄に入力
+   onChange → setName("太郎")
+   name = "太郎"
+
+2. "taro@example.com" をメール欄に入力
+   onChange → setEmail("taro@example.com")
+   email = "taro@example.com"
+
+3. 「作成」ボタンをクリック
+   onClick → handleSubmit() 発動
+
+【UserForm.jsx で】
+4. e.preventDefault()
+   → ページリロードを防ぐ
+
+5. setLoading(true)
+   → button が disabled になる
+   → 「作成」→「送信中...」に変わる
+
+6. await onSubmit(name, email)
+   → 親の handleCreate を実行（ここから App.jsx）
+
+【App.jsx で】
+7. const handleCreate = async (name, email) => {
+     await createUser(name, email)
+     → API に POST リクエスト送信
+     → http://localhost:3000/api/users
+     → Body: { "name": "太郎", "email": "taro@example.com" }
+
+8. await loadUsers()
+   → API に GET リクエスト送信
+   → http://localhost:3000/api/users
+   → 最新のユーザー一覧を取得
+   → setUsers(data)
+   → 画面が自動更新
+
+【戻る：UserForm.jsx で】
+9. setName("")
+   → name = ""
+   → 入力欄がクリア
+
+10. setLoading(false)
+    → button の disabled が解除
+    → 「送信中...」→「作成」に戻る
+
+【ブラウザに表示】
+11. 画面に新しいユーザーが追加される
+    新規作成セクション: 空
+    ユーザー一覧: 太郎が追加されている
+```
+
+このフローで、フロントエンドとバックエンドが連携しています。
+
+Docker化
+--------
+
+理由: 開発環境と本番環境を同一にし、「手元ではうまくいったのに...」という問題を防ぐため。
+
+**手順 1: frontend/Dockerfile を作成**
+
+**ファイルパス**
+```
+frontend/
+└── Dockerfile   ← ここに作成
+```
+
+**ファイル内容**
+
+frontend/Dockerfile に以下を記載：
+
+```dockerfile
+# Step 1: ビルドステージ
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# package.json のコピー
+COPY package.json package-lock.json ./
+
+# 依存のインストール
+RUN npm ci
+
+# ソースコードをコピー
+COPY . .
+
+# 本番用ビルド（最適化）
+RUN npm run build
+
+# Step 2: 実行ステージ（本番用 Web サーバー）
+FROM node:20-alpine
+
+WORKDIR /app
+
+# npm の軽量 HTTP サーバー
+RUN npm install -g serve
+
+# builder ステージからビルド結果をコピー
+COPY --from=builder /app/dist ./dist
+
+# ポート公開
+EXPOSE 3000
+
+# 起動コマンド（dist ディレクトリを port 3000 で公開）
+CMD ["serve", "-s", "dist", "-l", "3000"]
+```
+
+**解説**
+- `node:20-alpine`: Alpine Linux ベース（軽量）
+- マルチステージビルド: builder で `npm run build` を実行 → dist フォルダを生成
+- `serve`: 軽量な静的 HTTP サーバー（dist フォルダを公開）
+- 実行ステージは node_modules が不要（dist フォルダだけでOK）
+- 本番イメージサイズ: ~100MB（開発環境の 1/10）
+
+**なぜ Vite を起動しないのか？（開発 vs 本番の違い）**
+
+| 環境 | コマンド | 動作 | 目的 |
+|-----|---------|------|------|
+| **ローカル開発** | `npm run dev` | Vite 開発サーバー起動 | リアルタイムリロード、デバッグ |
+| **Docker 本番** | `serve dist/` | 静的ファイル配信 | 高速・軽量・本番最適化 |
+
+**ローカル開発：**
+```
+ソースコード (.jsx) → Vite サーバー → ブラウザ
+                     ↑
+              リアルタイム変換
+```
+
+**Docker 本番：**
+```
+ソースコード (.jsx) → npm run build → dist/ (HTML/JS/CSS 圧縮済み)
+                                         ↓
+                                       serve
+                                         ↓
+                                     ブラウザ
+```
+
+**Docker では Vite を起動せず、ビルド済み静的ファイルを配信するだけです。**
+
+**手順 2: frontend/.dockerignore を作成**
+
+**ファイルパス**
+```
+frontend/
+└── .dockerignore   ← ここに作成
+```
+
+**ファイル内容**
+
+frontend/.dockerignore に以下を記載：
+```
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+README_FE.md
+dist
+.env.example
+eslint.config.js
+```
+
+**解説**
+- `node_modules` と `dist` は Docker 内で生成するので除外
+- `index.html` と `vite.config.js` は **Vite ビルドに必須なので除外しない**
+- `public/` フォルダも必要なので除外しない（画像などのアセット含む）
+- `.git` や README は不要なので除外してイメージ軽量化
+
+**手順 3: API ベース URL を確認**
+
+src/services/api.js の確認
+```javascript
+const BASE_URL = "http://localhost:3000/api";
+```
+
+**重要：React のコードはブラウザで実行されるため、`localhost` はホスト PC を指します。**
+
+| 環境 | API URL | 説明 |
+|-----|---------|------|
+| **ローカル開発** | `http://localhost:3000/api` | ✅ そのままでOK |
+| **Docker Compose** | `http://localhost:3000/api` | ✅ そのままでOK（ポートマッピング経由） |
+| **本番デプロイ** | `https://api.example.com/api` | ❌ 環境変数で変更が必要 |
+
+**なぜ Docker Compose でも localhost でいいのか？**
+
+```
+【ブラウザ（ホストPC）】
+  ↓ JavaScript 実行
+fetch("http://localhost:3000/api/users")
+  ↓
+localhost:3000 = ホスト PC の 3000 ポート
+  ↓
+ポートマッピング（3000:3000）
+  ↓
+backend コンテナ
+```
+
+React のコードは **frontend コンテナ内ではなく、ブラウザで実行される** ため、ホスト PC の localhost にアクセスできます。
+
+**本番環境の場合のみ：**
+環境変数を使って BASE_URL を変更します：
+```javascript
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+```
+
+**手順 4: ローカルで Docker イメージをビルド（オプション）**
+
+```
+cd frontend
+docker build -t restapi-frontend:latest .
+```
+
+**手順 5: 単独でテスト（オプション）**
+
+```
+docker run -p 3000:3000 restapi-frontend:latest
+```
+
+**注意**
+- このコマンドで起動すると、ブラウザから http://localhost:3000 で アクセス可能
+- ただし API は http://localhost:3000/api を参照しているため、バックエンド API が起動していないとエラー
+- 次の「Docker Compose」ステップで全サービスを統合します
+
 次の一歩
 --------
 
@@ -755,5 +1245,6 @@ li {
 3. **ローカルストレージ** でデータをキャッシュ
 4. **Jest** でテストを追加
 5. **Tailwind CSS** でスタイルを高度に
+6. **Docker Compose** で全サービス統合（DOCKER_SETUP.md 参照）
 
 
