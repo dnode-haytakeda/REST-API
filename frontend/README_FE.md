@@ -1,4 +1,4 @@
-gitFrontend 手順書（例: React + Vite + Backend CRUD 連携）
+Frontend 手順書（例: React + Vite + Backend CRUD 連携）
 ======================================================
 
 この手順書はフロントエンドを段階的に理解して作れるようにまとめたものです。

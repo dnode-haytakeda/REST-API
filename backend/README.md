@@ -661,8 +661,146 @@ const { getUsers, getUser, postUser, putUser, patchUserHandler, deleteUser } = r
 router.delete("/:id", deleteUser);
 ```
 
+Docker化
+--------
+
+理由: 開発、本番、チーム間で同じ環境を保証し、「手元ではうまくいったのに...」という問題を防ぐため。
+
+**手順 1: Dockerfile を作成**
+
+**手順 1: backend/Dockerfile を作成**
+
+**ファイルパス**
+```
+backend/
+└── Dockerfile   ← ここに作成
+```
+
+**ファイル内容**
+
+backend/Dockerfile に以下を記載：
+
+```dockerfile
+# Step 1: ビルドステージ
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# package.json のコピー
+COPY package.json package-lock.json ./
+
+# 依存のインストール
+RUN npm ci
+
+# Step 2: 実行ステージ
+FROM node:20-alpine
+
+WORKDIR /app
+
+# builder ステージから node_modules をコピー（サイズ削減）
+COPY --from=builder /app/node_modules ./node_modules
+
+# ソースコードをコピー
+COPY . .
+
+# ポート公開
+EXPOSE 3000
+
+# 起動コマンド
+CMD ["npm", "start"]
+```
+
+**解説**
+- `node:20-alpine`: Alpine Linux ベースで軽量（全体で ~200MB）
+- マルチステージビルド: builder で依存をインストール → 実行ステージで必要なファイルのみコピー
+- `npm ci`: CI 環境向け（package-lock.json の正確さを保証）
+- `npm start`: 本番起動スクリプト（nodemon は開発用なので使わない）
+
+**なぜ package.json を先にコピーするのか？（Docker レイヤーキャッシュ最適化）**
+
+Docker は各命令を「レイヤー」として保存し、ファイルが変わらなければキャッシュ（再利用）します。
+
+```dockerfile
+COPY package.json package-lock.json ./   # レイヤー A
+RUN npm ci                                # レイヤー B（5分かかる）
+COPY . .                                  # レイヤー C
+```
+
+**シナリオ：src/app.js を修正してリビルド**
+- レイヤー A: package.json 変わってない → ✅ キャッシュ利用
+- レイヤー B: npm ci をスキップ → ✅ キャッシュ利用（5分節約）
+- レイヤー C: ソースコード変わった → ❌ 再実行（10秒）
+
+**もし COPY . . を先に書くと：**
+- src/app.js 変更 → COPY . . が再実行 → npm ci も再実行（毎回5分待つ）
+
+**結論：** package.json を先にコピーすることで、依存が変わらない限り npm install をスキップできる
+
+**手順 2: backend/.dockerignore を作成**
+
+**ファイルパス**
+```
+backend/
+└── .dockerignore   ← ここに作成
+```
+
+**ファイル内容**
+
+backend/.dockerignore に以下を記載：
+```
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env.example
+tests
+```
+
+**解説**
+- Docker イメージから不要なファイルを除外
+- ビルド時間を短縮、イメージサイズを削減
+
+**手順 3: 環境変数を確認**
+
+backend/.env の確認
+```
+PORT=3000
+DB_HOST=db               # ← ここが重要！docker-compose では service 名を使う
+DB_PORT=3306
+DB_USER=app
+DB_PASSWORD=app_password
+DB_NAME=app_db
+```
+
+**解説**
+- Docker コンテナ間通信では、localhost ではなく service 名（`db`）を使う
+- docker-compose.yml で service 名 `db` を定義すると、自動的に DNS 解決される
+
+**手順 4: ローカルで Docker イメージをビルド（オプション）**
+
+```
+cd backend
+docker build -t restapi-backend:latest .
+```
+
+**解説**
+- `-t`: タグ名（リポジトリ名:バージョン）
+- `.`: Dockerfile の場所
+
+**手順 5: 単独でテスト（オプション）**
+
+```
+docker run --env-file .env -p 3000:3000 restapi-backend:latest
+```
+
+**注意**
+- この段階では DB が起動していないため、API は動作しません
+- 次の「Docker Compose」ステップで全サービスを統合します
+
 次の一歩
 --------
 - requests.http で各エンドポイントをテストする
 - バリデーション機能を強化する
 - テストを追加する
+- Docker Compose で全サービス統合（DOCKER_SETUP.md 参照）
