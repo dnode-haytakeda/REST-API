@@ -16,7 +16,7 @@ main {
 section {
     margin: 2rem 0;
     padding-bottom: 2rem;
-    border-bottom: 8px;
+    border-bottom: 8px solid #ddd;
 }
 
 form {
