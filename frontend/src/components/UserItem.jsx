@@ -10,7 +10,7 @@ const UserItem = ({ user, onEdit, onDelete }) => {
       <span>
         {user.name} ({user.email})
       </span>
-      <buttom onClick={() => onEdit(user)}>編集</buttom>
+      <button onClick={() => onEdit(user)}>編集</button>
       <button onClick={handleDelete} style={{ color: "red" }}>
         削除
       </button>
