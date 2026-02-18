@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 INSERT INTO
     product_categories (name, description, display_order, is_active)
 VALUES

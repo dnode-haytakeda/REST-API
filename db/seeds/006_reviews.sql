@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 INSERT INTO
     reviews (
         product_id,

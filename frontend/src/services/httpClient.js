@@ -45,7 +45,7 @@ class HttpClient {
   }
 
   get(endpoint, params = null) {
-    return this.request("GET", endpoint, params);
+    return this.request("GET", endpoint, null, params);
   }
 
   post(endpoint, data) {

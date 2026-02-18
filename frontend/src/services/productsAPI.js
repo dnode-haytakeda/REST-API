@@ -22,7 +22,7 @@ export const productsAPI = {
 
   // 製品詳細取得
   getDetail: async (id) => {
-    return httpClient.getDetail(`/products/${id}`);
+    return httpClient.get(`/products/${id}`);
   },
 
   // 製品作成
@@ -32,11 +32,11 @@ export const productsAPI = {
 
   // 製品更新
   update: async (id, updates) => {
-    return httpClient.put(`products/${id}`, updates);
+    return httpClient.put(`/products/${id}`, updates);
   },
 
   // 製品削除
   delete: async (id) => {
-    return httpClient.delete(`products${id}`);
+    return httpClient.delete(`/products/${id}`);
   },
 };

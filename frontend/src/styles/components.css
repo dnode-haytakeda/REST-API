@@ -1,0 +1,502 @@
+@import "./variables.css";
+
+/* ボタン */
+.btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-outline {
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  background-color: transparent;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 製品カード */
+.product-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+}
+
+.product-image {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background-color: var(--light-color);
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.badge-featured {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background-color: var(--warning-color);
+  color: black;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+}
+
+.product-info {
+  padding: var(--spacing-md);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  text-decoration: none;
+  color: var(--dark-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.product-name h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  line-height: 1.3;
+}
+
+.product-name:hover h3 {
+  color: var(--primary-color);
+}
+
+/* ページネーション */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-lg) 0;
+  flex-wrap: wrap;
+}
+
+.btn-pagination {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  background-color: white;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-pagination:hover:not(:disabled) {
+  background-color: var(--light-color);
+}
+
+.btn-pagination.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ローディング */
+.spinner {
+  border: 4px solid var(--light-color);
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* レイアウト */
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--light-color);
+}
+
+.app-content {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+}
+
+/* ヘッダー */
+.app-header {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-md) var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+.search-form {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex: 1;
+  max-width: 500px;
+}
+
+.search-input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+}
+
+.header-nav {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.header-nav a {
+  text-decoration: none;
+  color: var(--dark-color);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.header-nav a:hover {
+  background-color: var(--light-color);
+  color: var(--primary-color);
+}
+
+/* 製品一覧ページ */
+.product-list-page {
+  width: 100%;
+}
+
+.product-list-page h1 {
+  margin-bottom: var(--spacing-lg);
+  color: var(--dark-color);
+}
+
+.product-list-container {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-lg);
+}
+
+.product-main {
+  min-height: 400px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+/* フィルターパネル */
+.filter-panel {
+  background: white;
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+  position: sticky;
+  top: 80px;
+}
+
+.filter-panel h3 {
+  margin-top: 0;
+  margin-bottom: var(--spacing-lg);
+  color: var(--dark-color);
+}
+
+.filter-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--dark-color);
+}
+
+.filter-group select,
+.filter-group input {
+  width: 100%;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+}
+
+.filter-group span {
+  display: inline-block;
+  margin: var(--spacing-sm) var(--spacing-xs);
+}
+
+.full-width {
+  width: 100%;
+}
+
+/* ダッシュボード */
+.dashboard-page {
+  text-align: center;
+  padding: var(--spacing-xxl);
+}
+
+.dashboard-page h1 {
+  color: var(--dark-color);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 注文一覧ページ */
+.order-list-page {
+  padding: var(--spacing-lg);
+}
+
+.order-list-page h1 {
+  color: var(--dark-color);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 製品詳細ページ */
+.product-detail-page {
+  padding: var(--spacing-lg);
+}
+
+.detail-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xxl);
+  background: white;
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detail-image img {
+  width: 100%;
+  border-radius: var(--border-radius-md);
+}
+
+.detail-info h1 {
+  margin-top: 0;
+  color: var(--dark-color);
+}
+
+.detail-meta {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.detail-meta .price {
+  font-size: var(--font-size-xl);
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.detail-meta .rating {
+  font-size: var(--font-size-lg);
+}
+
+.detail-stock {
+  margin: var(--spacing-lg) 0;
+  font-weight: 500;
+}
+
+.detail-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.detail-actions input {
+  width: 80px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+/* エラーメッセージ */
+.error-message {
+  background-color: #fee;
+  color: var(--danger-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--danger-color);
+}
+
+/* レスポンシブ */
+@media (max-width: 768px) {
+  .product-list-container {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-panel {
+    position: relative;
+    top: 0;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .detail-container {
+    grid-template-columns: 1fr;
+  }
+
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-form {
+    max-width: 100%;
+  }
+}
+
+/* ユーザー管理ページ */
+.users-page {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.users-page h1 {
+  margin-bottom: var(--spacing-lg);
+  color: var(--dark-color);
+}
+
+.users-page section {
+  margin: var(--spacing-xl) 0;
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.users-page section:last-child {
+  border-bottom: none;
+}
+
+.users-page h2 {
+  margin-bottom: var(--spacing-md);
+  color: var(--dark-color);
+  font-size: var(--font-size-lg);
+}
+
+.users-page form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.users-page input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-base);
+}
+
+.users-page input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.users-page form button {
+  margin-right: var(--spacing-sm);
+}
+
+.users-page ul {
+  list-style: none;
+  padding: 0;
+}
+
+.users-page li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--light-color);
+  margin: var(--spacing-sm) 0;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.users-page li:hover {
+  background: #e9ecef;
+}
+
+.users-page li span {
+  flex: 1;
+}
+
+.users-page li button {
+  margin-left: var(--spacing-sm);
+}

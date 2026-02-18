@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 INSERT INTO
     products (
         category_id,

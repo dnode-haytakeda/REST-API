@@ -27,24 +27,24 @@
 │   ├── ProductList      （製品一覧・検索）← Phase 2
 │   ├── ProductDetail    （製品詳細）← Phase 2
 │   ├── OrderList        （注文履歴）← Phase 3
-│   └── OrderDetail      （注文詳細）← Phase 3
+│   └── App              （レイアウト）
 ├── Components
-│   ├── Header/Navigation
-│   ├── ProductCard, ProductGrid
-│   ├── FilterPanel, Pagination
-│   ├── OrderCard        ← Phase 3
-│   ├── ReviewForm       ← Phase 3
-│   └── ...
+│   ├── Header
+│   ├── FilterPanel
+│   ├── Pagination
+│   ├── ProductCard
+│   ├── LoadingSpinner
+│   ├── UserForm
+│   ├── UserItem
+│   └── EditForm
 ├── APIサービス
 │   ├── usersAPI
 │   ├── productsAPI      ← Phase 2
-│   ├── ordersAPI        ← Phase 3
-│   └── reviewsAPI       ← Phase 3
+│   ├── categoriesAPI
+│   └── httpClient
 └── 状態管理
-    ├── useUsers
-    ├── useProducts      ← Phase 2
-    ├── useOrders        ← Phase 3
-    └── useCart
+  ├── useProducts      ← Phase 2
+  └── useCart
 ```
 
 ---
@@ -133,33 +133,25 @@ frontend/
 │   │   ├── ProductDetail.jsx          ← 製品詳細
 │   │   └── OrderList.jsx              ← 注文一覧
 │   ├── components/                    ← 再利用可能コンポーネント
-│   │   ├── Header.jsx                 ← ヘッダー
-│   │   ├── Navigation.jsx             ← ナビゲーション
-│   │   ├── ProductCard.jsx            ← 製品カード（リスト用）
-│   │   ├── ProductGrid.jsx            ← 製品グリッド表示
+│   │   ├── EditForm.jsx               ← 編集フォーム
 │   │   ├── FilterPanel.jsx            ← フィルタパネル
-│   │   ├── Pagination.jsx             ← ページネーション
+│   │   ├── Header.jsx                 ← ヘッダー
 │   │   ├── LoadingSpinner.jsx         ← ローディング表示
-│   │   ├── ErrorMessage.jsx           ← エラー表示
-│   │   └── Modal/
-│   │       ├── ConfirmDialog.jsx      ← 確認ダイアログ
-│   │       └── CartModal.jsx          ← カート表示
+│   │   ├── Pagination.jsx             ← ページネーション
+│   │   ├── ProductCard.jsx            ← 製品カード（リスト用）
+│   │   ├── UserForm.jsx               ← ユーザー作成フォーム
+│   │   └── UserItem.jsx               ← ユーザー表示
 │   ├── services/                      ← APIサービス
 │   │   ├── api.js                     ← 既存（ユーザー用）
-│   │   ├── productsAPI.js             ← 製品API
 │   │   ├── categoriesAPI.js           ← カテゴリーAPI
-│   │   ├── ordersAPI.js               ← 注文API
-│   │   └── httpClient.js              ← HTTP共通処理
+│   │   ├── httpClient.js              ← HTTP共通処理
+│   │   └── productsAPI.js             ← 製品API
 │   ├── hooks/                         ← カスタムフック（状態管理）
-│   │   ├── useProducts.js             ← 製品状態管理
-│   │   ├── useCategories.js           ← カテゴリー状態管理
-│   │   ├── useOrders.js               ← 注文状態管理
 │   │   ├── useCart.js                 ← カート状態管理
-│   │   └── useFetch.js                ← 汎用fetch
+│   │   └── useProducts.js             ← 製品状態管理
 │   ├── styles/
-│   │   ├── global.css                 ← グローバルスタイル
 │   │   ├── components.css             ← コンポーネント固有
-│   │   ├── pages.css                  ← ページ固有
+│   │   ├── global.css                 ← グローバルスタイル
 │   │   └── variables.css              ← CSS変数
 │   ├── main.jsx
 │   └── index.css
@@ -396,7 +388,7 @@ export const categoriesAPI = {
 ```javascript
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import "./components.css";
+import "../styles/components.css";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -679,6 +671,26 @@ const Pagination = ({ page, pages, onPageChange }) => {
 export default Pagination;
 ```
 
+### LoadingSpinner コンポーネント
+
+### 📁 ファイル: `frontend/src/components/LoadingSpinner.jsx`
+
+**保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/components/LoadingSpinner.jsx`
+
+```javascript
+const LoadingSpinner = () => {
+  return (
+    <div className="spinner" role="status" aria-live="polite">
+      <span className="sr-only">Loading...</span>
+    </div>
+  );
+};
+
+export default LoadingSpinner;
+```
+
+**補足:** `.spinner` のスタイルは `frontend/src/styles/components.css` に定義済み
+
 ---
 
 ## 状態管理
@@ -695,7 +707,7 @@ import { productsAPI } from "../services/productsAPI";
 
 const useProducts = (initialFilters = {}) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // 初回ロード時はtrue
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -731,6 +743,7 @@ const useProducts = (initialFilters = {}) => {
   // 初回読み込み
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {
@@ -1044,6 +1057,45 @@ mkdir -p src/pages src/components src/hooks src/styles
 
 ### Step 3: ページコンポーネント実装
 
+### 📁 ファイル: `frontend/src/pages/App.jsx`
+
+**保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/pages/App.jsx`
+
+```javascript
+import { Outlet } from "react-router-dom";
+import Header from "../components/Header";
+
+const App = () => {
+  return (
+    <div className="app-layout">
+      <Header />
+      <main className="app-content">
+        <Outlet />
+      </main>
+    </div>
+  );
+};
+
+export default App;
+```
+
+### 📁 ファイル: `frontend/src/pages/Dashboard.jsx`
+
+**保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/pages/Dashboard.jsx`
+
+```javascript
+const Dashboard = () => {
+  return (
+    <div className="dashboard-page">
+      <h1>ホーム</h1>
+      <p>おすすめ製品や新着情報をここに表示します。</p>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
 ### 📁 ファイル: `frontend/src/pages/ProductList.jsx`
 
 **保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/pages/ProductList.jsx`
@@ -1056,7 +1108,7 @@ import FilterPanel from "../components/FilterPanel";
 import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
 import LoadingSpinner from "../components/LoadingSpinner";
-import "../styles/pages.css";
+import "../styles/components.css";
 
 const ProductList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1114,6 +1166,23 @@ const ProductList = () => {
 };
 
 export default ProductList;
+```
+
+### 📁 ファイル: `frontend/src/pages/OrderList.jsx`
+
+**保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/pages/OrderList.jsx`
+
+```javascript
+const OrderList = () => {
+  return (
+    <div className="order-list-page">
+      <h1>注文一覧</h1>
+      <p>注文履歴をここに表示します。</p>
+    </div>
+  );
+};
+
+export default OrderList;
 ```
 
 ### 📁 ファイル: `frontend/src/pages/ProductDetail.jsx`
@@ -1284,6 +1353,9 @@ export default ProductDetail;
 ### Phase 3: 注文・レビュー UI（推奨事項）
 
 - [ ] OrderList.jsx でユーザーの注文履歴表示
+
+### 将来追加（未実装）
+
 - [ ] OrderDetail.jsx で注文詳細表示
 - [ ] ReviewForm.jsx でレビュー投稿フォーム
 - [ ] レビュー表示・フィルタリング
