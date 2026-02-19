@@ -11,7 +11,7 @@ const ProductCard = ({ product }) => {
     <div className="product-card">
       {/* 画像 */}
       <div className="product-image">
-        <Link to={`/products/${product.id}`}>
+        <Link to={`/mypage/products/${product.id}`}>
           <img
             src={product.image_url || "/placeholder.jpg"}
             alt={product.name}
@@ -24,7 +24,7 @@ const ProductCard = ({ product }) => {
 
       {/* 情報 */}
       <div className="product-info">
-        <Link to={`/products/${product.id}`} className="product-name">
+        <Link to={`/mypage/products/${product.id}`} className="product-name">
           <h3>{product.name}</h3>
         </Link>
 

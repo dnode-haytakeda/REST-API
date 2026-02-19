@@ -8,14 +8,14 @@ const Header = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     // ProductList に検索クエリを渡す
-    window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+    window.location.href = `/mypage/products?search=${encodeURIComponent(searchQuery)}`;
   };
 
   return (
     <header className="app-header">
       <div className="header-container">
         {/* ロゴ */}
-        <Link to="/" className="logo">
+        <Link to="/mypage" className="logo">
           🛍️ E-Commerce
         </Link>
 
@@ -35,12 +35,9 @@ const Header = () => {
 
         {/* ナビゲーション */}
         <nav className="header-nav">
-          <Link to="/">ホーム</Link>
-          <Link to="/products">製品</Link>
-          <Link to="/orders">注文</Link>
-          <Link to="/users" className="btn btn-outline">
-            ユーザー管理
-          </Link>
+          <Link to="/mypage">ホーム</Link>
+          <Link to="/mypage/products">製品</Link>
+          <Link to="/mypage/orders">注文</Link>
         </nav>
       </div>
     </header>
