@@ -2,9 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./styles/global.css";
-import "./styles/variables.css";
+import "./styles/components.css";
 
 // ページコンポーネント
+import SelectRole from "./pages/SelectRole"
 import Dashboard from "./pages/Dashboard";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
@@ -18,18 +19,22 @@ function RootApp() {
   return (
     <Router>
       <Routes>
-        {/* App: ヘッダー・フッター含むレイアウト */}
-        <Route element={<App />}>
-          {/* 各ページ */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/products" element={<ProductList />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/orders" element={<OrderList />} />
-          <Route path="/users" element={<UsersPage />} />
+        {/* 起動直後の選択画面 */}
+        <Route path="/" element={<SelectRole />} />
 
-          {/* 404 */}
-          <Route path="*" element={<div>ページが見つかりません</div>} />
+        {/* エンドユーザー: ヘッダー・フッター含むレイアウト */}
+        <Route path="/mypage" element={<App />}>
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<ProductList />} />
+          <Route path="products/:id" element={<ProductDetail />} />
+          <Route path="orders" element={<OrderList />} />
         </Route>
+
+        {/* 管理者 */}
+        <Route path="/admin" element={<UsersPage />} />
+
+        {/* 404 */}
+        <Route path="*" element={<div>ページが見つかりません</div>} />
       </Routes>
     </Router>
   );

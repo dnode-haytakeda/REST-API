@@ -500,3 +500,104 @@
 .users-page li button {
   margin-left: var(--spacing-sm);
 }
+
+/* ロールセレクト画面 */
+.role-select-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--spacing-xl);
+}
+
+.role-select-page h1 {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xxl);
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.role-select-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-xl);
+  max-width: 800px;
+  width: 100%;
+}
+
+.role-select-actions .btn {
+  height: 200px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-select-actions .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.role-select-actions .btn:hover::before {
+  left: 100%;
+}
+
+.role-select-actions .btn:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.role-select-actions .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 3px solid white;
+}
+
+.role-select-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.role-select-actions .btn-outline {
+  background: white;
+  color: #667eea;
+  border: 3px solid #667eea;
+}
+
+.role-select-actions .btn-outline:hover {
+  background: #667eea;
+  color: white;
+  border-color: white;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .role-select-page h1 {
+    font-size: 1.8rem;
+  }
+
+  .role-select-actions {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .role-select-actions .btn {
+    height: 150px;
+    font-size: 1.25rem;
+  }
+}
+

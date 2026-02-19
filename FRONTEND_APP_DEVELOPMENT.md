@@ -23,10 +23,12 @@
 ```
 フロントエンド（React）
 ├── Pages
+│   ├── SelectRole       （役割選択）
 │   ├── Dashboard        （ホーム）
 │   ├── ProductList      （製品一覧・検索）← Phase 2
 │   ├── ProductDetail    （製品詳細）← Phase 2
 │   ├── OrderList        （注文履歴）← Phase 3
+│   ├── UsersPage        （管理者: ユーザー管理）
 │   └── App              （レイアウト）
 ├── Components
 │   ├── Header
@@ -128,10 +130,12 @@ frontend/
 ├── src/
 │   ├── pages/                         ← ページコンポーネント
 │   │   ├── App.jsx                    ← メインページ（改良版）
+│   │   ├── SelectRole.jsx             ← 役割選択
 │   │   ├── Dashboard.jsx              ← ホーム
 │   │   ├── ProductList.jsx            ← 製品一覧
 │   │   ├── ProductDetail.jsx          ← 製品詳細
-│   │   └── OrderList.jsx              ← 注文一覧
+│   │   ├── OrderList.jsx              ← 注文一覧
+│   │   └── UsersPage.jsx              ← 管理者ユーザー管理
 │   ├── components/                    ← 再利用可能コンポーネント
 │   │   ├── EditForm.jsx               ← 編集フォーム
 │   │   ├── FilterPanel.jsx            ← フィルタパネル
@@ -174,6 +178,13 @@ npm install react-router-dom@7.0.0
 
 ### ルーティング設定
 
+この手順では、起動直後の選択画面と、エンドユーザー/管理者のルート分離を実現します。
+
+1. `/` は **役割選択ページ** を表示する
+2. エンドユーザー機能は `/mypage/*` に集約する
+3. 管理者機能（ユーザー管理）は `/admin/*` に移動する
+4. ルート直下の空白表示を防ぐため、`/admin` は `/admin/users` にリダイレクトする
+
 ### 📁 ファイル: `frontend/src/main.jsx`
 
 **保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/main.jsx`
@@ -181,13 +192,15 @@ npm install react-router-dom@7.0.0
 ```javascript
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 // ページコンポーネント
+import SelectRole from "./pages/SelectRole";
 import Dashboard from "./pages/Dashboard";
 import ProductList from "./pages/ProductList";
 import ProductDetail from "./pages/ProductDetail";
 import OrderList from "./pages/OrderList";
+import UsersPage from "./pages/UsersPage";
 
 // ショーケットコンポーネント
 import App from "./pages/App";  // Header, Footer含む
@@ -196,16 +209,24 @@ function RootApp() {
   return (
     <Router>
       <Routes>
+        {/* 起動直後の選択画面 */}
+        <Route path="/" element={<SelectRole />} />
+
         {/* App: ヘッダー・フッター含むレイアウト */}
         <Route element={<App />}>
-          {/* 各ページ */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/products" element={<ProductList />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/orders" element={<OrderList />} />
-          
+          {/* エンドユーザー */}
+          <Route path="/mypage" element={<Dashboard />} />
+          <Route path="/mypage/products" element={<ProductList />} />
+          <Route path="/mypage/products/:id" element={<ProductDetail />} />
+          <Route path="/mypage/orders" element={<OrderList />} />
+
+          {/* 管理者 */}
+          <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+          <Route path="/admin/users" element={<UsersPage />} />
+
           {/* 404 */}
-          <Route path="*" element={<div>ページが見つかりません</div>} />
+          <Route path="/mypage/*" element={<div>ページが見つかりません</div>} />
+          <Route path="/admin/*" element={<div>ページが見つかりません</div>} />
         </Route>
       </Routes>
     </Router>
@@ -219,10 +240,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<RootApp />);
 
 | パス | コンポーネント | 説明 |
 |------|-------------|------|
-| `/` | Dashboard | ホーム |
-| `/products` | ProductList | 製品一覧・検索 |
-| `/products/:id` | ProductDetail | 製品詳細 |
-| `/orders` | OrderList | 注文一覧 |
+| `/` | SelectRole | 役割選択（起動直後に表示） |
+| `/mypage` | Dashboard | エンドユーザーのホーム |
+| `/mypage/products` | ProductList | 製品一覧・検索 |
+| `/mypage/products/:id` | ProductDetail | 製品詳細 |
+| `/mypage/orders` | OrderList | 注文一覧 |
+| `/admin/users` | UsersPage | 管理者のユーザー管理 |
 
 ---
 
@@ -396,7 +419,7 @@ const Header = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     // ProductList に検索クエリを渡す
-    window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+    window.location.href = `/mypage/products?search=${encodeURIComponent(searchQuery)}`;
   };
 
   return (
@@ -423,12 +446,9 @@ const Header = () => {
 
         {/* ナビゲーション */}
         <nav className="header-nav">
-          <Link to="/">ホーム</Link>
-          <Link to="/products">製品</Link>
-          <Link to="/orders">注文</Link>
-          <Link to="/users" className="btn btn-outline">
-            ユーザー管理
-          </Link>
+          <Link to="/mypage">ホーム</Link>
+          <Link to="/mypage/products">製品</Link>
+          <Link to="/mypage/orders">注文</Link>
         </nav>
       </div>
     </header>
@@ -1077,6 +1097,36 @@ const App = () => {
 };
 
 export default App;
+```
+
+### 📁 ファイル: `frontend/src/pages/SelectRole.jsx`
+
+**保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/pages/SelectRole.jsx`
+
+```javascript
+import { useNavigate } from "react-router-dom";
+
+const SelectRole = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="role-select-page">
+      <h1>どちらで利用しますか？</h1>
+      <div className="role-select-actions">
+        <button className="btn btn-primary" onClick={() => navigate("/mypage")}
+        >
+          エンドユーザー
+        </button>
+        <button className="btn btn-outline" onClick={() => navigate("/admin")}
+        >
+          管理者
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default SelectRole;
 ```
 
 ### 📁 ファイル: `frontend/src/pages/Dashboard.jsx`
