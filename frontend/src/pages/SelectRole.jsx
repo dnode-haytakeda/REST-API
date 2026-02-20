@@ -7,10 +7,10 @@ const SelectRole = () => {
         <div className="role-select-page">
             <h1>どちらで利用しますか？</h1>
             <div className="role-select-actions">
-                <button className="btn btn-primary" onClick={() => navigate("/mypage")}>
+                <button className="btn btn-primary" onClick={() => navigate("/mypage/login")}>
                     エンドユーザー
                 </button>
-                <button className="btn btn-primary" onClick={() => navigate("/admin")}>
+                <button className="btn btn-primary" onClick={() => navigate("/admin/login")}>
                     管理者
                 </button>
             </div>

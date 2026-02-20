@@ -195,6 +195,11 @@
   - 変更: `httpClient` を使用して認証ヘッダーを付与
   - 参照: `FRONTEND_AUTH_IMPLEMENTATION.md` → 「API通信層の更新」
 
+- [ ] **役割選択ページ更新**
+  - ファイル: `frontend/src/pages/SelectRole.jsx`（既存ファイルを更新）
+  - 変更: `/mypage` → `/mypage/login`, `/admin` → `/admin/login` に直接遷移
+  - 参照: `FRONTEND_AUTH_IMPLEMENTATION.md` → 「役割選択ページ実装」
+
 - [ ] **ログインページ作成**
   - ファイル: `frontend/src/pages/LoginPage.jsx`
   - 内容: エンドユーザー向けログインUI

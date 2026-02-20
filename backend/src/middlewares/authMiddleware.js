@@ -1,5 +1,5 @@
 const { verifyToken } = require("../utils/iwtUtils");
-const db = require("../config/db");
+const { pool } = require("../config/db");
 
 /**
  * 認証ミドルウェア
@@ -8,7 +8,7 @@ const db = require("../config/db");
 const authenticate = async (req, res, next) => {
   try {
     // 1. ヘッダーからトークン取得
-    const authHeader = req.header.authorization;
+    const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
@@ -27,8 +27,8 @@ const authenticate = async (req, res, next) => {
     const decoded = verifyToken(token);
 
     // 4. DBからユーザー情報を取得（最新のis_active状態を確認）
-    const [rows] = await db.query(
-      "SELECT id, name, email, role, is_active, FROM users WHERE id = ?",
+    const [rows] = await pool.query(
+      "SELECT id, name, email, role, is_active FROM users WHERE id = ?",
       [decoded.userId],
     );
 

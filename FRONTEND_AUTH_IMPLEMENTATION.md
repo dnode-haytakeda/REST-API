@@ -427,6 +427,72 @@ export const deleteUser = async (id) => {
 
 ---
 
+## 役割選択ページ実装
+
+### 📁 ファイル: `frontend/src/pages/SelectRole.jsx`（既存ファイルを更新）
+
+**保存先パス:** `/Users/haytakeda/Sites/RESTAPI/frontend/src/pages/SelectRole.jsx`
+
+**役割:** エンドユーザーと管理者の役割選択
+
+**重要:** SelectRole から直接ログインページへ遷移する理由
+
+```javascript
+import { useNavigate } from "react-router-dom";
+
+const SelectRole = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="role-select-page">
+      <h1>どちらで利用しますか？</h1>
+      <div className="role-select-actions">
+        {/* 直接ログインページへ遷移 */}
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate("/mypage/login")}
+        >
+          エンドユーザー
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate("/admin/login")}
+        >
+          管理者
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default SelectRole;
+```
+
+### なぜ `/mypage` や `/admin` ではなく、`/mypage/login` や `/admin/login` か？
+
+```javascript
+// ❌ これだと...
+<button onClick={() => navigate("/mypage")}>エンドユーザー</button>
+
+// 流れ:
+// 1. navigate("/mypage")
+// 2. /mypage へ遷移
+// 3. <ProtectedRoute> が isAuthenticated をチェック
+// 4. false だから /mypage/login へリダイレクト
+// → 無駄なナビゲーションが発生
+
+// ✅ これが正しい
+<button onClick={() => navigate("/mypage/login")}>エンドユーザー</button>
+
+// 流れ:
+// 1. navigate("/mypage/login")
+// 2. /mypage/login へ遷移
+// 3. LoginPage が直接表示される
+// → シンプル、効率的
+```
+
+---
+
 ## ログインページ実装
 
 ### エンドユーザー用ログインページ
@@ -1201,26 +1267,26 @@ npm run dev
 
 1. `http://localhost:5173/` にアクセス
 2. 「エンドユーザー」ボタンをクリック
-3. `/mypage/login` にリダイレクトされる（未ログイン）
+3. `/mypage/login` に遷移する（ログインページ）
 4. 「こちらから登録」リンクをクリック
 5. 登録フォームに入力:
    - 名前: テストユーザー
    - メール: test@example.com
    - パスワード: password123
 6. 「登録」ボタンをクリック
-7. `/mypage` にリダイレクトされる（ログイン成功）
+7. `/mypage` に遷移される（ログイン成功）
 8. ヘッダーに「👤 テストユーザー」が表示される
 
 #### シナリオ2: 管理者ログイン
 
 1. `http://localhost:5173/` にアクセス
 2. 「管理者」ボタンをクリック
-3. `/admin/login` にリダイレクトされる
+3. `/admin/login` に遷移する（管理者ログインページ）
 4. ログインフォームに入力:
    - メール: admin@example.com
    - パスワード: password123
 5. 「管理者ログイン」ボタンをクリック
-6. `/admin` にリダイレクトされる（ユーザー管理画面）
+6. `/admin` に遷移される（ユーザー管理画面）
 
 #### シナリオ3: 保護されたルート
 

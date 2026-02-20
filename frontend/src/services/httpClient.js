@@ -10,9 +10,20 @@ class HttpClient {
       url += `?${queryString}`;
     }
 
+    // ヘッダーの構築
+    const headers = {
+      "Content-Type": "application/json",
+    }
+
+    // localstorage からトークンを取得して自動付与
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const options = {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers
     };
 
     if (data && ["POST", "PUT", "PATCH"].includes(method)) {
