@@ -1,14 +1,22 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/components.css";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleSearch = (e) => {
     e.preventDefault();
     // ProductList に検索クエリを渡す
     window.location.href = `/mypage/products?search=${encodeURIComponent(searchQuery)}`;
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
   };
 
   return (
@@ -38,6 +46,16 @@ const Header = () => {
           <Link to="/mypage">ホーム</Link>
           <Link to="/mypage/products">製品</Link>
           <Link to="/mypage/orders">注文</Link>
+
+          {/* ユーザー情報 */}
+          {user && (
+            <div className="user-menu">
+              <span className="user-name">👤 {user.name}</span>
+              <button onClick={handleLogout} className="btn btn-outline btn-sm">
+                ログアウト
+              </button>
+            </div>
+          )}
         </nav>
       </div>
     </header>
