@@ -1,3 +1,4 @@
+const { validateLoginPayload } = require("../validators/authValidator");
 const {
   getUserByEmail,
   registerUser,
@@ -149,7 +150,7 @@ const login = async (req, res) => {
  * ミドルウェア: authenticate
  */
 const getCurrentUser = (req, res) => {
-  // authenticat ミドルウェアで req.user が設定済み
+  // authenticate ミドルウェアで req.user が設定済み
   res.status(200).json({
     success: true,
     data: {

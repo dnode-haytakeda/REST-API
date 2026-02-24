@@ -1,4 +1,4 @@
-const { verifyToken } = require("../utils/iwtUtils");
+const { verifyToken } = require("../utils/jwtUtils");
 const { pool } = require("../config/db");
 
 /**

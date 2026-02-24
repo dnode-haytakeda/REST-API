@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-const { generateToken } = require("../utils/iwtUtils");
+const { generateToken } = require("../utils/jwtUtils");
 const {
   findByEmail,
   findByEmailWithPassword,
