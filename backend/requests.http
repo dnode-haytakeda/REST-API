@@ -39,3 +39,37 @@ Content-Type: application/json
 
 ### ユーザー削除（Delete）
 DELETE {{baseUrl}}/users/{{userId}}
+
+### Get Categories
+GET http://localhost:3000/api/products/categories
+
+### Get Products (with filters)
+GET http://localhost:3000/api/products?category_id=1&min_price=100000&sort=price&order=asc&page=1&limit=10
+
+### Get Product Detail
+GET http://localhost:3000/api/products/1
+
+### Create Product
+POST http://localhost:3000/api/products
+Content-Type: application/json
+
+{
+  "category_id": 1,
+  "name": "iPhone 15 Max",
+  "description": "大型モデル",
+  "price": 160000,
+  "stock": 25,
+  "sku": "SKU-IP15MAX-001"
+}
+
+### Update Product
+PUT http://localhost:3000/api/products/1
+Content-Type: application/json
+
+{
+  "price": 145000,
+  "stock": 40
+}
+
+### Delete Product
+DELETE http://localhost:3000/api/products/2

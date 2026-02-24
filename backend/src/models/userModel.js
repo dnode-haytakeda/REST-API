@@ -47,6 +47,42 @@ const deleteById = async (id) => {
   return result.affectedRows;
 };
 
+const findByEmail = async (email) => {
+  const [rows] = await pool.query(
+    "SELECT id, name, email FROM users WHERE email = ?",
+    [email],
+  );
+  return rows[0] || null;
+};
+
+const findByEmailWithPassword = async (email) => {
+  const [rows] = await pool.query(
+    "SELECT id, name, email, password, role, is_active FROM users WHERE email = ?",
+    [email],
+  );
+  return rows[0] || null;
+};
+
+const findByIdForAuth = async (id) => {
+  const [rows] = await pool.query(
+    "SELECT id, name, email, role, is_active FROM users WHERE id = ?",
+    [id],
+  );
+  return rows[0] || null;
+};
+
+const createAuthUser = async (name, email, hashedPassword) => {
+  const [result] = await pool.query(
+    "INSERT INTO users (name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?)",
+    [name, email, hashedPassword, "user", true],
+  );
+  return result.insertId;
+};
+
+const setLastLoginAt = async (id) => {
+  await pool.query("UPDATE users SET last_login_at = NOW() WHERE id = ?", [id]);
+};
+
 module.exports = {
   findAll,
   findById,
@@ -54,4 +90,9 @@ module.exports = {
   update,
   partialUpdate,
   deleteById,
+  findByEmail,
+  findByEmailWithPassword,
+  findByIdForAuth,
+  createAuthUser,
+  setLastLoginAt,
 };

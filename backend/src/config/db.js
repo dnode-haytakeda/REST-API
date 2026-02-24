@@ -8,6 +8,7 @@ const pool = mysql.createPool({
   password: getEnv("DB_PASSWORD", "app_password"),
   database: getEnv("DB_NAME", "app_db"),
   connectionLimit: 10,
+  charset: "utf8mb4",
 });
 
 module.exports = { pool };
