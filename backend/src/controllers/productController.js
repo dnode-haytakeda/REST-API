@@ -59,7 +59,7 @@ const getProductDetail = async (req, res, next) => {
     res.status(200).json(product);
   } catch (err) {
     if (err.message === "Product not found") {
-      return res.status(404).json({ message: "Product not found " });
+      return res.status(404).json({ message: "Product not found" });
     }
     next(err);
   }
