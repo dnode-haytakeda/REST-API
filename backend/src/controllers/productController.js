@@ -125,7 +125,7 @@ const putProduct = async (req, res, next) => {
       fields.is_featured = req.body.is_featured;
 
     if (Object.keys(fields).length === 0) {
-      return res.status(400).json({ error: "No fields to update " });
+      return res.status(400).json({ error: "No fields to update" });
     }
 
     const product = await updateProduct(id, fields);
