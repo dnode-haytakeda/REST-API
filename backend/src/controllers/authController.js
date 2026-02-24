@@ -108,7 +108,7 @@ const login = async (req, res) => {
       return res.status(403).json({
         success: false,
         error: {
-          message: "Account is desabled",
+          message: "Account is disabled",
           code: "ACCOUNT_DISABLED",
         },
       });
