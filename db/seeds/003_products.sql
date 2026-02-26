@@ -7,6 +7,7 @@ INSERT INTO
         description,
         price,
         stock,
+        image_url,
         sku,
         is_featured,
         rating
@@ -18,6 +19,7 @@ VALUES
         '高性能A17 Proチップ搭載、プログレード撮影カメラ',
         150000.00,
         50,
+        '/vite.svg',
         'SKU-IP15P-001',
         TRUE,
         4.8
@@ -28,6 +30,7 @@ VALUES
         '120Hz有機EL、最新Snapdragon搭載',
         140000.00,
         30,
+        '/vite.svg',
         'SKU-SGS24-001',
         TRUE,
         4.7
@@ -38,6 +41,7 @@ VALUES
         'M2チップ、11インチディスプレイ',
         130000.00,
         20,
+        '/vite.svg',
         'SKU-IPAD-001',
         FALSE,
         4.6
@@ -48,6 +52,7 @@ VALUES
         '快適な着心地、多色展開',
         2000.00,
         200,
+        '/vite.svg',
         'SKU-UNIQ-001',
         FALSE,
         4.3
@@ -58,6 +63,7 @@ VALUES
         'シングルサイズ、簡単組み立て',
         15000.00,
         15,
+        '/vite.svg',
         'SKU-NITORI-001',
         FALSE,
         4.5
@@ -68,6 +74,7 @@ VALUES
         '夏目漱石の古典作品',
         1500.00,
         100,
+        '/vite.svg',
         'SKU-BOOK-001',
         FALSE,
         4.9

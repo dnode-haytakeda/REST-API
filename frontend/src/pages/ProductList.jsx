@@ -11,6 +11,8 @@ const ProductList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, loading, error, pagination, fetchProducts } = useProducts({
     search: searchParams.get("search") || undefined,
+    sort: searchParams.get("sort") || undefined,
+    order: searchParams.get("order") || undefined,
   });
 
   const handleFilter = async (filters) => {

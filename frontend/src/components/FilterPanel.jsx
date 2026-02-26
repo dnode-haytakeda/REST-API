@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { categoriesAPI } from "../services/categoriesAPI";
+import { validatePriceRange } from "../utils/validators";
 
 const FilterPanel = ({ onFilter }) => {
   const [categories, setCategories] = useState([]);
@@ -9,6 +10,7 @@ const FilterPanel = ({ onFilter }) => {
     max_price: null,
     sort: "created_at",
   });
+  const [priceError, setPriceError] = useState(null);
 
   // カテゴリー読み込み
   useEffect(() => {
@@ -21,7 +23,33 @@ const FilterPanel = ({ onFilter }) => {
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    onFilter(newFilters);
+
+    // 価格入力時のみバリデーション
+    if (key === "min_price" || key === "max_price") {
+      const validation = validatePriceRange(
+        newFilters.min_price,
+        newFilters.max_price,
+      );
+
+      if (!validation.isValid) {
+        setPriceError(validation.error);
+        return;
+      } else {
+        setPriceError(null);
+      }
+    }
+  };
+
+  // 「適用」押下時にのみフィルター実行
+  const handleApplyFilter = () => {
+    const validation = validatePriceRange(filters.min_price, filters.max_price);
+    if (!validation.isValid) {
+      setPriceError(validation.error);
+      return;
+    }
+
+    setPriceError(null);
+    onFilter(filters);
   };
 
   return (
@@ -49,29 +77,39 @@ const FilterPanel = ({ onFilter }) => {
       {/* 価格帯 */}
       <div className="filter-group">
         <label>価格帯</label>
-        <input
-          type="number"
-          placeholder="最小"
-          value={filters.min_price || ""}
-          onChange={(e) =>
-            handleFilterChange(
-              "min_price",
-              e.target.value ? parseFloat(e.target.value) : null,
-            )
-          }
-        />
-        <span>～</span>
-        <input
-          type="number"
-          placeholder="最大"
-          value={filters.max_price || ""}
-          onChange={(e) =>
-            handleFilterChange(
-              "max_price",
-              e.target.value ? parseFloat(e.target.value) : null,
-            )
-          }
-        />
+        <div className="price-inputs">
+          <input
+            type="number"
+            placeholder="最小"
+            value={filters.min_price || ""}
+            onChange={(e) =>
+              handleFilterChange(
+                "min_price",
+                e.target.value ? parseFloat(e.target.value) : null,
+              )
+            }
+            min="0"
+            step="100"
+          />
+          <span>～</span>
+          <input
+            type="number"
+            placeholder="最大"
+            value={filters.max_price || ""}
+            onChange={(e) =>
+              handleFilterChange(
+                "max_price",
+                e.target.value ? parseFloat(e.target.value) : null,
+              )
+            }
+            min="0"
+            step="100"
+          />
+        </div>
+        {/** エラーメッセージ表示 */}
+        {priceError && (
+          <p className="validation-error">{priceError}</p>
+        )}
       </div>
 
       {/* ソート */}
@@ -87,17 +125,27 @@ const FilterPanel = ({ onFilter }) => {
         </select>
       </div>
 
+      {/** 適用ボタン（カテゴリー・価格帯・ソートを一括適用） */}
+      <button 
+        className="btn btn-primary full-width"
+        onClick={handleApplyFilter}
+        disabled={Boolean(priceError)}>
+          フィルターを適用
+      </button>
+
       {/* リセット */}
       <button
         className="btn btn-outline full-width"
         onClick={() => {
-          setFilters({
+          const resetFilters = {
             category_id: null,
             min_price: null,
             max_price: null,
             sort: "created_at",
-          });
-          onFilter({});
+          };
+          setFilters(resetFilters);
+          setPriceError(null);
+          onFilter(resetFilters);
         }}
       >
         フィルターをリセット

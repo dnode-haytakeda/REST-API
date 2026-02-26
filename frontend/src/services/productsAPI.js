@@ -20,6 +20,11 @@ export const productsAPI = {
     return httpClient.get("/products", params);
   },
 
+  // 人気製品取得（閲覧数上位）
+  getPopular: async (limit = 10) => {
+    return httpClient.get("/products/popular", { limit });
+  },
+
   // 製品詳細取得
   getDetail: async (id) => {
     return httpClient.get(`/products/${id}`);

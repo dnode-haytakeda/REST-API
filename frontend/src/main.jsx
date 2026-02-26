@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// リセットCSS（一番最初に読み込む）
+import "modern-normalize/modern-normalize.css";
 import "./styles/global.css";
 import "./styles/components.css";
 

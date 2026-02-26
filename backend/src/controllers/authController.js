@@ -101,14 +101,14 @@ const login = async (req, res) => {
       });
     }
 
-    // 2. ログイン処理(bcyrpt/JWTはサービス層で処理)
+    // 2. ログイン処理(bcrypt/JWTはサービス層で処理)
     const result = await loginUser({ email, password });
 
     if (result.error === "ACCOUNT_DISABLED") {
       return res.status(403).json({
         success: false,
         error: {
-          message: "Account is desabled",
+          message: "Account is disabled",
           code: "ACCOUNT_DISABLED",
         },
       });
