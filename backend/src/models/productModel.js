@@ -171,14 +171,29 @@ const deleteById = async (id) => {
 const findPopular = async (limit = 10) => {
   const query = `
     SELECT
-      p.id, p.category_id, p.name, p.description, p.price,
-      p.stock, p.image_url, p.sku, p.is_featured, p.rating,
-      p.reviews_count, p.created_at, p.updated_at, 
-      COUNT(pv.id) as view_count
+      p.id,
+      p.category_id,
+      p.name,
+      p.description,
+      p.price,
+      p.stock,
+      p.image_url,
+      p.sku,
+      p.is_featured,
+      p.rating,
+      p.reviews_count,
+      p.created_at,
+      p.updated_at,
+      IFNULL(pv30.view_count, 0) AS view_count
     FROM products p
-    LEFT JOIN product_views pv ON p.id = pv.product_id
-      AND pv.viewed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-    GROUP BY p.id
+    LEFT JOIN (
+      SELECT
+        product_id,
+        COUNT(*) AS view_count
+      FROM product_views
+      WHERE viewed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      GROUP BY product_id
+    ) pv30 ON p.id = pv30.product_id
     ORDER BY view_count DESC, p.rating DESC
     LIMIT ?
   `;
