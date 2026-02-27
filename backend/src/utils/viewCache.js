@@ -20,7 +20,7 @@ const FLUSH_INTERVAL_MS = 5 * 1000; // 5秒ごとにDBへ書き込み
 const MAX_BUFFER_SIZE = 1000; // バッファ最大件数（メモリ保護）
 
 // --内部状態--
-let buffer = []; // { productId, userId, ipAddress, viewdAt }
+let buffer = []; // { productId, userId, ipAddress, viewedAt }
 let flushTimer = null; // setIntervalの参照
 let isFlushing = false; // flush中の重複実行防止フラグ
 
