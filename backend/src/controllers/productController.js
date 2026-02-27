@@ -24,23 +24,7 @@ const getCategories = async (req, res, next) => {
 // 製品一覧(フィルター・ページング)
 const getProducts = async (req, res, next) => {
   try {
-    const filters = {
-      category_id: req.query.category_id
-        ? parseInt(req.query.category_id)
-        : undefined,
-      min_price: req.query.min_price
-        ? parseFloat(req.query.min_price)
-        : undefined,
-      max_price: req.query.max_price
-        ? parseFloat(req.query.max_price)
-        : undefined,
-      is_featured: req.query.is_featured === "true" ? true : undefined,
-      search: req.query.search,
-      sort: req.query.sort,
-      order: req.query.order,
-      page: req.query.page,
-      limit: req.query.limit,
-    };
+    const filters = req.validateQuery;
 
     const result = await listProducts(filters);
     res.status(200).json(result);

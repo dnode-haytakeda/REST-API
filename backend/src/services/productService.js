@@ -1,3 +1,4 @@
+const viewCache = require("../utils/viewCache");
 const productModel = require("../models/productModel");
 const productCategoryModel = require("../models/productCategoryModel");
 const {
@@ -56,13 +57,16 @@ const getProduct = async (id, userId = null, ipAddress = null) => {
   const product = await productModel.findById(id);
   if (!product) throw new Error("Product not found");
 
-  // 閲覧を記録（エラーが起きても製品は返す）
-  try {
-    await productModel.recordView(id, userId, ipAddress);
-  } catch (err) {
-    console.error("Failed to record view:", err);
-    // エラーは無視して製品を返す
-  }
+  // // 閲覧を記録（エラーが起きても製品は返す）
+  // try {
+  //   await productModel.recordView(id, userId, ipAddress);
+  // } catch (err) {
+  //   console.error("Failed to record view:", err);
+  //   // エラーは無視して製品を返す
+  // }
+
+  // DB直接INSERTからメモリバッファに変更（同期処理、await不要）
+  viewCache.recordView(id, userId, ipAddress);
 
   return product;
 };

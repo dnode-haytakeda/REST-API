@@ -1,19 +1,31 @@
-import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import useProducts from "../hooks/useProducts";
 import FilterPanel from "../components/FilterPanel";
 import ProductCard from "../components/ProductCard";
 import Pagination from "../components/Pagination";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { validateQueryParams } from "../utils/queryValidator";
 import "../styles/components.css";
 
 const ProductList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { products, loading, error, pagination, fetchProducts } = useProducts({
-    search: searchParams.get("search") || undefined,
-    sort: searchParams.get("sort") || undefined,
-    order: searchParams.get("order") || undefined,
-  });
+
+  // ↓↓↓ 追加: URLクエリパラメータをバリデーション
+  const {
+    isValid,
+    errors: queryErrors,
+    sanitized,
+  } = validateQueryParams(searchParams);
+
+  const { products, loading, error, pagination, fetchProducts } = useProducts(
+    isValid
+      ? {
+          search: sanitized.search || undefined,
+          sort: sanitized.sort || undefined,
+          order: sanitized.order || undefined,
+        }
+      : {}, // バリデーションエラー時はフィルターなしで初期表示
+  );
 
   const handleFilter = async (filters) => {
     await fetchProducts({ ...filters, page: 1 });
@@ -22,6 +34,23 @@ const ProductList = () => {
   const handlePageChange = async (page) => {
     await fetchProducts({ page });
   };
+
+  // ↓↓↓ 追加: クエリバリデーションエラーの表示
+  if (!isValid) {
+    return (
+      <div className="product-list-page">
+        <h1>製品一覧</h1>
+        <div className="error-message">
+          <p>URLのパラメータが不正です:</p>
+          <ul>
+            {queryErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return <div className="error-message">エラー: {error}</div>;
@@ -32,10 +61,8 @@ const ProductList = () => {
       <h1>製品一覧</h1>
 
       <div className="product-list-container">
-        {/* フィルタパネル */}
         <FilterPanel onFilter={handleFilter} />
 
-        {/* メインコンテンツ */}
         <main className="product-main">
           {loading ? (
             <LoadingSpinner />

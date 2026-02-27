@@ -1,5 +1,6 @@
 const express = require("express");
 const { authenticate } = require("../middlewares/authMiddleware");
+const { validateProductQuery } = require("../middlewares/validateQuery");
 const {
   getCategories,
   getProducts,
@@ -19,7 +20,7 @@ router.get("/categories", getCategories);
 router.get("/popular", getPopularProductsHandler);
 
 // 製品エンドポイント
-router.get("/", getProducts);
+router.get("/", validateProductQuery, getProducts);
 router.post("/", postProduct);
 router.get("/:id", authenticate, getProductDetail);
 router.put("/:id", putProduct);
