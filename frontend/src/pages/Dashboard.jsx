@@ -37,7 +37,7 @@ const Dashboard = () => {
       {/** 人気製品セクション */}
       <section className="popular-products-section">
         <div className="section-header">
-          <h2>🔥 人気製品</h2>
+          <h2>人気製品</h2>
           <Link to="/mypage/products" className="view-all-link">
             全ての製品を見る →
           </Link>
@@ -66,14 +66,13 @@ const Dashboard = () => {
                   </p>
                   <div className="product-meta">
                     <span className="rating">
-                      ⭐️{" "}
                       {product.rating
                         ? Number(product.rating).toFixed(1)
                         : "未評価"}
                     </span>
                     {product.view_count && (
                       <span className="view-count">
-                        👀 {product.view_count.toLocaleString()} 回閲覧
+                        {product.view_count.toLocaleString()} views
                       </span>
                     )}
                   </div>
@@ -87,14 +86,14 @@ const Dashboard = () => {
       {/** 追加のセクション（オプション） */}
       <section className="dashboard-info">
         <div className="info-card">
-          <h3>🎁 新着製品</h3>
+          <h3>新着製品</h3>
           <p>最新の製品をチェック</p>
           <Link to="/mypage/products?sort=created_at&order=desc" className="btn btn-outline">
             新着を見る
           </Link>
         </div>
         <div className="info-card">
-          <h3>⭐️ 高評価製品</h3>
+          <h3>高評価製品</h3>
           <p>レビュー評価の高い製品</p>
           <Link to="/mypage/products?sort=rating&order=desc" className="btn btn-outline">
             高評価を見る

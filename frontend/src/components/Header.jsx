@@ -24,7 +24,7 @@ const Header = () => {
       <div className="header-container">
         {/* ロゴ */}
         <Link to="/mypage" className="logo">
-          🛍️ E-Commerce
+          E-Commerce
         </Link>
 
         {/* 検索フォーム */}
@@ -50,7 +50,7 @@ const Header = () => {
           {/* ユーザー情報 */}
           {user && (
             <div className="user-menu">
-              <span className="user-name">👤 {user.name}</span>
+              <span className="user-name">{user.name}</span>
               <button onClick={handleLogout} className="btn btn-outline btn-sm">
                 ログアウト
               </button>

@@ -49,7 +49,7 @@ const ProductDetail = () => {
           <div className="detail-meta">
             <span className="price">¥{Number(product.price).toLocaleString()}</span>
             <span className="rating">
-              ⭐ {product.rating ? Number(product.rating).toFixed(1) : "未評価"} ({product.reviews_count || 0}件)
+              {product.rating ? Number(product.rating).toFixed(1) : "未評価"} ({product.reviews_count || 0}件)
             </span>
           </div>
 

@@ -5,13 +5,13 @@ const SelectRole = () => {
 
     return ( 
         <div className="role-select-page">
-            <h1>どちらで利用しますか？</h1>
+            <h1>ご利用方法を選択してください</h1>
             <div className="role-select-actions">
                 <button className="btn btn-primary" onClick={() => navigate("/mypage/login")}>
-                    エンドユーザー
+                    ユーザーとして利用
                 </button>
-                <button className="btn btn-primary" onClick={() => navigate("/admin/login")}>
-                    管理者
+                <button className="btn btn-outline" onClick={() => navigate("/admin/login")}>
+                    管理者としてログイン
                 </button>
             </div>
         </div>

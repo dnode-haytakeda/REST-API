@@ -1,19 +1,29 @@
-/* 既存の*によるリセットは削除または簡略化 */
-/* modern-normalizeがベースを整えてくれるため、最小限のリセットでOK */
+/* ============================================
+   Global Styles
+   ============================================ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
+/* --- Reset & Base --- */
 html,
 body {
   height: 100%;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  color: #212529;
-  background-color: #f8f9fa;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
 }
 
 #root {
@@ -22,13 +32,59 @@ body {
   flex-direction: column;
 }
 
+/* --- Typography Defaults --- */
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--font-size-3xl); }
+h2 { font-size: var(--font-size-2xl); }
+h3 { font-size: var(--font-size-xl); }
+
+p {
+  margin-top: 0;
+  color: var(--text-secondary);
+}
+
 a {
   color: inherit;
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 img {
   max-width: 100%;
   height: auto;
   display: block;
+}
+
+/* --- Focus Styles (Accessibility) --- */
+:focus-visible {
+  outline: 2px solid var(--color-green);
+  outline-offset: 2px;
+}
+
+/* --- Selection --- */
+::selection {
+  background-color: var(--color-green-light);
+  color: var(--text-primary);
+}
+
+/* --- Scrollbar (Webkit) --- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
 }
