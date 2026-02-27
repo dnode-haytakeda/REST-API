@@ -64,6 +64,6 @@ SELECT
 FROM products p
 LEFT JOIN product_views pv ON p.id = pv.product_id
   AND pv.viewed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-GROUP BY p.id
+GROUP BY p.id, p.name
 ORDER BY view_count_30days DESC
 LIMIT 10;
