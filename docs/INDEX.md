@@ -120,7 +120,7 @@ RESTAPI/
 │   ├── references/         # 参考資料
 │   └── archive/            # 個別開発ステップ記録（履歴用）
 │       ├── BACKEND/        #   バックエンド関連（01〜09）
-│       ├── FRONTEND/       #   フロントエンド関連（01〜09）
+│       ├── FRONTEND/       #   フロントエンド関連（01〜10）
 │       └── DB/             #   データベース関連（01〜06）
 │
 ├── docker-compose.yml       # 全体起動用 Docker Compose

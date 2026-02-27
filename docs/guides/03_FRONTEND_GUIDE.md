@@ -17,8 +17,9 @@
 7. [Phase 6: スタイリング（CSS）](#7-phase-6-スタイリングcss)
 8. [Phase 7: Docker対応](#8-phase-7-docker対応)
 9. [Phase 8: クエリパラメータバリデーション（フロントエンド側）](#9-phase-8-クエリパラメータバリデーションフロントエンド側)
-10. [動作確認手順](#10-動作確認手順)
-11. [トラブルシューティング](#11-トラブルシューティング)
+10. [Phase 9: UIリデザイン（プロフェッショナルテーマ）](#10-phase-9-uiリデザインプロフェッショナルテーマ)
+11. [動作確認手順](#11-動作確認手順)
+12. [トラブルシューティング](#12-トラブルシューティング)
 - [付録A: ファイル作成チェックリスト](#付録a-ファイル作成チェックリスト)
 - [付録B: React 主要概念のまとめ](#付録b-react-主要概念のまとめ)
 - [付録C: React / CSS 基礎知識](#付録c-react--css-基礎知識)
@@ -2966,7 +2967,148 @@ if (!response.ok) {
 
 ---
 
-## 10. 動作確認手順
+## 10. Phase 9: UIリデザイン（プロフェッショナルテーマ）
+
+### 10.1 概要と目的
+
+既存のUIをプロフェッショナル品質に刷新します。Deloitteを連想させるカラーパレット（Black + Green #86BC25）を基調に、コーポレート感のあるクリーンなデザインシステムを構築します。
+
+**変更対象ファイル:**
+
+| ファイル | 変更内容 |
+|---------|---------|
+| `src/styles/variables.css` | デザイントークン全面刷新 |
+| `src/styles/global.css` | ベーススタイル・タイポグラフィ更新 |
+| `src/index.css` | Viteデフォルト削除 |
+| `src/styles/components.css` | 全コンポーネントスタイル再設計 |
+| `src/components/Header.jsx` | 絵文字削除・テキスト改善 |
+| `src/pages/Dashboard.jsx` | 絵文字削除・テキスト改善 |
+| `src/pages/ProductDetail.jsx` | 絵文字削除 |
+| `src/pages/SelectRole.jsx` | テキスト・ボタン改善 |
+
+### 10.2 デザインシステム（Design Tokens）
+
+#### カラーパレット
+
+```
+Brand:
+  Black:       #000000  ← ヘッダー、重要テキスト
+  Green:       #86BC25  ← 主要アクセント、CTA
+  Green Dark:  #6B9E1F  ← ホバー状態
+  Green Light: #e8f5d4  ← フォーカスリング、背景アクセント
+
+Neutrals:
+  gray-900: #1a1a1a  ← テキスト primary
+  gray-800: #2d2d2d  ← 検索バー背景
+  gray-600: #585858  ← テキスト secondary
+  gray-500: #767676  ← テキスト tertiary
+  gray-200: #d9d9d9  ← ボーダー
+  gray-100: #ededed  ← 背景 tertiary
+  gray-50:  #f7f7f7  ← 背景 secondary
+
+Semantic:
+  Success: #2e7d32
+  Warning: #ef6c00
+  Danger:  #c62828
+  Info:    #1565c0
+```
+
+#### タイポグラフィ
+
+- **フォント**: Inter（Google Fonts）+ システムフォントフォールバック
+- **サイズスケール**: xs(0.75rem) → 3xl(2rem)
+- **ウェイト**: 400(normal), 500(medium), 600(semibold), 700(bold)
+- **letter-spacing**: tight(-0.02em) / wide(0.04em) / caps(0.08em)
+
+#### スペーシング・ラディウス
+
+- **スペーシング**: 4px基準（xs:4px, sm:8px, md:16px, lg:24px, xl:32px, 2xl:40px, 3xl:48px）
+- **角丸**: シャープ寄り（xs:2px, sm:4px, md:6px, lg:8px, xl:12px）
+- **シャドウ**: 5段階（xs→xl）、控えめな企業風
+
+### 10.3 実装手順
+
+#### Step 1: variables.css の全面刷新
+
+`src/styles/variables.css` を全デザイントークンに置き換えます。旧変数名（`--primary-color`, `--dark-color` 等）はレガシー互換エイリアスとして末尾に残します。
+
+```css
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* Brand Colors */
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-green: #86BC25;
+  --color-green-dark: #6B9E1F;
+  --color-green-light: #e8f5d4;
+
+  /* Neutrals: gray-50 〜 gray-900 */
+  /* Semantic: success, warning, danger, info */
+  /* Applied: text-primary, bg-primary, border-color 等 */
+  /* Spacing, Typography, Radius, Shadow, Transition */
+  /* Legacy aliases */
+}
+```
+
+#### Step 2: index.css のクリーンアップ
+
+Vite scaffold が生成する `color-scheme: light dark` や `background-color: #242424` を削除します。これらは global.css と競合するため、index.css は空ファイルにします。
+
+#### Step 3: global.css のリデザイン
+
+- Google Fonts の Inter フォントを `@import` で読み込み
+- `body` に `var(--font-family-base)` / `var(--text-primary)` / `var(--bg-secondary)` を適用
+- 見出し（h1〜h6）にデフォルトタイポグラフィ設定
+- `:focus-visible` に Green アクセントのアウトライン
+- `::selection` に Green Light 背景
+- Webkit スクロールバーのカスタマイズ
+
+#### Step 4: components.css の全面リデザイン
+
+各コンポーネントの主な変更点：
+
+| コンポーネント | Before | After |
+|---------------|--------|-------|
+| **Header** | 白背景 | Black背景、白テキスト、Greenアクセントロゴ |
+| **Buttons** | Blueprint青（#007bff） | Green(#86BC25) primary、uppercase、letter-spacing |
+| **Product Cards** | 軽いシャドウ | 洗練されたボーダー + ホバー時 subtle lift |
+| **Role Select** | 紫グラデーション | Black背景 + Green radial-gradient |
+| **Auth Pages** | 紫グラデーション | Dark gray(#1a1a1a)背景 |
+| **Admin Auth** | ピンクグラデーション | 純Black背景 |
+| **Filter Panel** | box-shadow | ボーダー + Black下線の見出し |
+| **Pagination** | 青アクティブ | Blackアクティブ、Greenホバー |
+| **Dashboard** | 基本的 | section-header にBlack下線、hover時Greenボーダー |
+| **Search Bar** | 白背景 | Dark入力欄（gray-800背景、gray-600ボーダー） |
+
+#### Step 5: JSX コンポーネントの改善
+
+絵文字を全面削除し、プロフェッショナルなテキストに置換：
+
+| 箇所 | Before | After |
+|------|--------|-------|
+| Header ロゴ | `🛍️ E-Commerce` | `E-Commerce` |
+| Header ユーザー名 | `👤 {user.name}` | `{user.name}` |
+| Dashboard 人気製品 | `🔥 人気製品` | `人気製品` |
+| Dashboard 新着 | `🎁 新着製品` | `新着製品` |
+| Dashboard 高評価 | `⭐️ 高評価製品` | `高評価製品` |
+| Dashboard 閲覧数 | `👀 {count} 回閲覧` | `{count} views` |
+| ProductDetail 評価 | `⭐ {rating}` | `{rating}` |
+| SelectRole タイトル | `どちらで利用しますか？` | `ご利用方法を選択してください` |
+| SelectRole ボタン | 両方 `btn-primary` | primary + outline の使い分け |
+
+### 10.4 デザイン原則
+
+1. **クリーンな余白**: generous whitespace でコンテンツを呼吸させる
+2. **シャープなコーナー**: コンサルティングファーム風の角丸（4-8px）
+3. **控えめなシャドウ**: 微細な shadow で奥行きを表現
+4. **タイポグラフィ階層**: Inter フォント + bold headings + tight letter-spacing
+5. **色の制約**: Black + Green の2色体系を厳守（多色を避ける）
+6. **プログレッシブ・エンハンスメント**: hover/focus 状態を丁寧に設計
+
+---
+
+## 11. 動作確認手順
 
 ### 9.1 開発サーバーの起動
 
@@ -3017,9 +3159,9 @@ curl http://localhost:3000/api/products
 
 ---
 
-## 11. トラブルシューティング
+## 12. トラブルシューティング
 
-### 11.1 よくあるエラーと対処法
+### 12.1 よくあるエラーと対処法
 
 | エラー | 原因 | 対処法 |
 |--------|------|--------|
