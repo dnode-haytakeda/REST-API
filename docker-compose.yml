@@ -15,12 +15,18 @@ services:
       - ./db/migrations/001_create_users.sql:/docker-entrypoint-initdb.d/01_001_create_users.sql
       - ./db/migrations/002_create_product_tables.sql:/docker-entrypoint-initdb.d/02_002_create_product_tables.sql
       - ./db/migrations/003_create_orders_reviews.sql:/docker-entrypoint-initdb.d/03_003_create_orders_reviews.sql
-      - ./db/seeds/001_users.sql:/docker-entrypoint-initdb.d/04_001_users.sql
-      - ./db/seeds/002_product_categories.sql:/docker-entrypoint-initdb.d/05_002_product_categories.sql
-      - ./db/seeds/003_products.sql:/docker-entrypoint-initdb.d/06_003_products.sql
-      - ./db/seeds/004_orders.sql:/docker-entrypoint-initdb.d/07_004_orders.sql
-      - ./db/seeds/005_order_items.sql:/docker-entrypoint-initdb.d/08_005_order_items.sql
-      - ./db/seeds/006_reviews.sql:/docker-entrypoint-initdb.d/09_006_reviews.sql
+      - ./db/migrations/004_add_auth_to_users.sql:/docker-entrypoint-initdb.d/04_004_add_auth_to_users.sql
+      - ./db/migrations/005_create_product_views.sql:/docker-entrypoint-initdb.d/05_005_create_product_views.sql
+      - ./db/migrations/006_optimize_indexes.sql:/docker-entrypoint-initdb.d/06_006_optimize_indexes.sql
+      - ./db/migrations/007_improve_fulltext_search.sql:/docker-entrypoint-initdb.d/07_007_improve_fulltext_search.sql
+      - ./db/seeds/001_users.sql:/docker-entrypoint-initdb.d/08_001_users.sql
+      - ./db/seeds/002_product_categories.sql:/docker-entrypoint-initdb.d/09_002_product_categories.sql
+      - ./db/seeds/003_products.sql:/docker-entrypoint-initdb.d/10_003_products.sql
+      - ./db/seeds/004_orders.sql:/docker-entrypoint-initdb.d/11_004_orders.sql
+      - ./db/seeds/005_order_items.sql:/docker-entrypoint-initdb.d/12_005_order_items.sql
+      - ./db/seeds/006_reviews.sql:/docker-entrypoint-initdb.d/13_006_reviews.sql
+      - ./db/seeds/007_auth_users.sql:/docker-entrypoint-initdb.d/14_007_auth_users.sql
+      - ./db/seeds/008_product_views_test.sql:/docker-entrypoint-initdb.d/15_008_product_views_test.sql
     healthcheck:
       test:
         [

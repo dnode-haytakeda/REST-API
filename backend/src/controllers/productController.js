@@ -5,6 +5,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  getPopularProducts,
 } = require("../services/productService");
 
 // カテゴリー一覧
@@ -55,7 +56,14 @@ const getProductDetail = async (req, res, next) => {
     if (Number.isNaN(id)) {
       return res.status(400).json({ error: "Invalid product id" });
     }
-    const product = await getProduct(id);
+
+    // ユーザーID（認証済みの場合）
+    const userId = req.user ? req.user.id : null;
+
+    // IPアドレス取得
+    const ipAddress = req.ip || req.connection.remoteAddress;
+
+    const product = await getProduct(id, userId, ipAddress);
     res.status(200).json(product);
   } catch (err) {
     if (err.message === "Product not found") {
@@ -155,6 +163,27 @@ const deleteProductHandler = async (req, res, next) => {
   }
 };
 
+// 人気製品取得エンドポイント
+/**
+ * GET api/products/popular
+ *
+ * クエリパラメータ:
+ * - limit: 取得件数（デフォルト10,最大100）
+ */
+const getPopularProductsHandler = async (req, res, next) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit) : 10;
+    const products = await getPopularProducts(limit);
+
+    res.status(200).json({
+      data: products,
+      count: products.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getCategories,
   getProducts,
@@ -162,4 +191,5 @@ module.exports = {
   postProduct,
   putProduct,
   deleteProductHandler,
+  getPopularProductsHandler,
 };

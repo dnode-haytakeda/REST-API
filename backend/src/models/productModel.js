@@ -30,6 +30,10 @@ const findAll = async (filters = {}) => {
     params.push(filters.is_featured);
   }
   if (filters.search) {
+    // FULLTEXT検索（BOOLEAN MODE）
+    // - nameとdescriptionの両方を対象にOR検索
+    // - 複数キーワードはスペース区切りで入力可能
+    // - 例: "ノート 軽量" → いずれかのキーワードが含まれる製品
     query += " AND MATCH(p.name, p.description) AGAINST(? IN BOOLEAN MODE)";
     params.push(filters.search);
   }
@@ -157,6 +161,70 @@ const deleteById = async (id) => {
   return result.affectedRows;
 };
 
+/**
+ * 人気製品取得(閲覧数上位)
+ *
+ * @param {number} limit - 取得件数（デフォルト10件）
+ * @returns {Promise<Array>} 人気製品リスト
+ *
+ * 【仕様】
+ * - 過去30日間の閲覧数でソート
+ * - 閲覧数が同じ場合はrating（評価）でソート
+ * - product_viewsテーブルが存在しない場合はエラー
+ */
+const findPopular = async (limit = 10) => {
+  const query = `
+    SELECT
+      p.id,
+      p.category_id,
+      p.name,
+      p.description,
+      p.price,
+      p.stock,
+      p.image_url,
+      p.sku,
+      p.is_featured,
+      p.rating,
+      p.reviews_count,
+      p.created_at,
+      p.updated_at,
+      IFNULL(pv30.view_count, 0) AS view_count
+    FROM products p
+    LEFT JOIN (
+      SELECT
+        product_id,
+        COUNT(*) AS view_count
+      FROM product_views
+      WHERE viewed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      GROUP BY product_id
+    ) pv30 ON p.id = pv30.product_id
+    ORDER BY view_count DESC, p.rating DESC
+    LIMIT ?
+  `;
+
+  const [rows] = await pool.query(query, [limit]);
+  return rows;
+};
+
+/**
+ * 製品閲覧を記録
+ *
+ * @param {number} productId - 製品ID
+ * @param {number|null} userId - ユーザーID(未ログインの場合はnull)
+ * @param {string|null} ipAddress - IPアドレス（オプション）
+ * @returns {Promise<number>} 挿入されたレコードのID
+ */
+const recordView = async (productId, userId = null, ipAddress = null) => {
+  const [result] = await pool.query(
+    `
+    INSERT INTO product_views (product_id, user_id, ip_address)
+    VALUES (?, ?, ?)
+    `,
+    [productId, userId, ipAddress],
+  );
+  return result.insertId;
+};
+
 module.exports = {
   findAll,
   countAll,
@@ -164,4 +232,6 @@ module.exports = {
   create,
   update,
   deleteById,
+  findPopular,
+  recordView,
 };
