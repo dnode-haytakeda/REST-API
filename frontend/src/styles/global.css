@@ -1,23 +1,17 @@
-/* グローバルリセット */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* 既存の*によるリセットは削除または簡略化 */
+/* modern-normalizeがベースを整えてくれるため、最小限のリセットでOK */
 
 html,
 body {
   height: 100%;
-  margin: 0;
-  padding: 0;
 }
 
 body {
-  font-family: var(--font-family-base, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif);
-  font-size: var(--font-size-base, 1rem);
-  line-height: var(--line-height-base, 1.5);
-  color: var(--dark-color, #212529);
-  background-color: var(--light-color, #f8f9fa);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #212529;
+  background-color: #f8f9fa;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -37,23 +31,4 @@ img {
   max-width: 100%;
   height: auto;
   display: block;
-}
-
-ul,
-ol {
-  list-style: none;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0;
-  font-weight: 600;
-}
-
-p {
-  margin: 0;
 }

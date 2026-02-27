@@ -544,13 +544,18 @@
 }
 
 .role-select-actions .btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
   transition: left 0.5s ease;
 }
 
@@ -727,3 +732,166 @@
   margin-bottom: var(--spacing-md);
 }
 
+/* バリデーションエラーメッセージ */
+.validation-error {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+/* フィルターパネル内の価格帯入力（filter-group内で価格入力を横並びに） */
+.filter-group .price-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-group .price-inputs input {
+  flex: 1;
+}
+
+.filter-group .price-inputs span {
+  color: #6c757d;
+}
+
+/* 適用ボタンとリセットボタンの間隔 */
+.filter-panel .btn {
+  margin-top: 0.5rem;
+}
+
+/* ===================================
+   Dashboard ページ
+   =================================== */
+
+.dashboard-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.dashboard-subtitle {
+  color: #6c757d;
+  margin-bottom: 2rem;
+}
+
+/* 人気製品セクション */
+.popular-products-section {
+  margin-bottom: 3rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.view-all-link {
+  color: var(--primary-color, #007bff);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.view-all-link:hover {
+  color: var(--primary-dark, #0056b3);
+}
+
+/* 人気製品グリッド */
+.popular-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.popular-product-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.popular-product-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+.popular-product-card .product-image {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background-color: #f5f5f5;
+}
+
+.popular-product-card .product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.popular-product-card .product-info {
+  padding: 1rem;
+}
+
+.popular-product-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popular-product-card .product-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-color, #007bff);
+  margin-bottom: 0.5rem;
+}
+
+.popular-product-card .product-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.view-count {
+  font-size: 0.75rem;
+}
+
+/* ダッシュボード情報カード */
+.dashboard-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.info-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.info-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.info-card p {
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
