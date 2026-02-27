@@ -50,6 +50,11 @@
 
 ---
 
+> **補足:** 追加開発の手順（クエリバリデーション、閲覧履歴キャッシュ）は各ガイドの最終フェーズに統合済みです。  
+> 個別の開発ステップ記録は `docs/archive/` を参照してください。
+
+---
+
 ## 🏗️ システム構成
 
 ```
@@ -107,13 +112,16 @@ open http://localhost:5173
 RESTAPI/
 ├── docs/                    # ドキュメント
 │   ├── INDEX.md            # ← このファイル
-│   ├── guides/             # 構築ガイド
+│   ├── guides/             # 統合ガイド（これだけ見れば全て構築可能）
 │   │   ├── 01_DATABASE_GUIDE.md
 │   │   ├── 02_BACKEND_GUIDE.md
 │   │   ├── 03_FRONTEND_GUIDE.md
 │   │   └── 04_STARTUP_GUIDE.md
 │   ├── references/         # 参考資料
-│   └── archive/            # 旧ドキュメント
+│   └── archive/            # 個別開発ステップ記録（履歴用）
+│       ├── BACKEND/        #   バックエンド関連（01〜09）
+│       ├── FRONTEND/       #   フロントエンド関連（01〜09）
+│       └── DB/             #   データベース関連（01〜06）
 │
 ├── docker-compose.yml       # 全体起動用 Docker Compose
 │

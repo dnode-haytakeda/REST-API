@@ -1,4 +1,5 @@
 const { pool } = require("../config/db");
+const { ALLOWED_SORT_FIELDS } = require("../validators/queryValidator");
 
 // 全製品取得（フィルタリング・ページング対応）
 const findAll = async (filters = {}) => {
@@ -39,12 +40,7 @@ const findAll = async (filters = {}) => {
   }
 
   // ソート
-  const sortField =
-    {
-      price: "p.price",
-      rating: "p.rating",
-      created_at: "p.created_at",
-    }[filters.sort] || "p.created_at";
+  const sortField = ALLOWED_SORT_FIELDS[filters.sort] || "p.created_at";
   const sortOrder = filters.order === "desc" ? "DESC" : "ASC";
   query += ` ORDER BY ${sortField} ${sortOrder}`;
 
@@ -225,6 +221,38 @@ const recordView = async (productId, userId = null, ipAddress = null) => {
   return result.insertId;
 };
 
+/**
+ * 閲覧履歴をバッチINSERTする
+ *
+ * 【なぜ viewed_at を明示指定するのか？】
+ * 既存の recordView は INSERT 時刻 = 閲覧時刻だが、
+ * バッチ INSERT では INSERT 時刻 ≠ 閲覧時刻になるため、
+ * バッファに追加した時刻（= 実際の閲覧時刻）を viewedAt として明示的に保存する。
+ *
+ * 【バッチINSERTとは？】
+ * 通常: INSERT INTO table VALUES (1, 'a'); × 3回 → 3回のネットワーク往復
+ * バッチ: INSERT INTO table VALUES (1, 'a'), (2, 'b'), (3, 'c'); → 1回
+ */
+const batchRecordViews = async (views) => {
+  if (!views || views.length === 0) return 0;
+
+  const placeholders = views.map(() => "(?, ?, ?, ?)").join(", ");
+  const params = views.flatMap((v) => [
+    v.productId,
+    v.userId,
+    v.ipAddress,
+    v.viewedAt,
+  ]);
+
+  const query = `
+    INSERT INTO product_views (product_id, user_id, ip_address, viewed_at)
+    VALUES ${placeholders}
+  `;
+
+  const [result] = await pool.query(query, params);
+  return result.affectedRows;
+};
+
 module.exports = {
   findAll,
   countAll,
@@ -234,4 +262,5 @@ module.exports = {
   deleteById,
   findPopular,
   recordView,
+  batchRecordViews,
 };

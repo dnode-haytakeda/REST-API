@@ -15,9 +15,10 @@
 4. [Phase 2: ユーザーCRUD API](#4-phase-2-ユーザーcrud-api)
 5. [Phase 3: 製品・カテゴリーAPI](#5-phase-3-製品カテゴリーapi)
 6. [Phase 4: JWT認証システム](#6-phase-4-jwt認証システム)
-7. [APIエンドポイント一覧](#7-apiエンドポイント一覧)
-8. [動作確認方法](#8-動作確認方法)
-9. [トラブルシューティング](#9-トラブルシューティング)
+7. [Phase 5: セキュリティ強化とパフォーマンス最適化](#7-phase-5-セキュリティ強化とパフォーマンス最適化)
+8. [APIエンドポイント一覧](#8-apiエンドポイント一覧)
+9. [動作確認方法](#9-動作確認方法)
+10. [トラブルシューティング](#10-トラブルシューティング)
 
 ---
 
@@ -2777,11 +2778,990 @@ curl -s -X POST http://localhost:3000/api/auth/logout \
 # → { "success": true, "data": { "message": "Logged out successfully" } }
 ```
 
-**Phase 4 完了！** JWT認証システムが動作しています。全フェーズのバックエンド構築が完了しました。
+**Phase 4 完了！** JWT認証システムが動作しています。
 
 ---
 
-## 7. APIエンドポイント一覧
+## 7. Phase 5: セキュリティ強化とパフォーマンス最適化
+
+Phase 4 までで基本機能は完成しました。Phase 5 では、実運用を見据えた **クエリパラメータバリデーション**（SQLインジェクション対策）と **閲覧履歴キャッシュ**（DB負荷軽減）を実装します。
+
+### 7.1 この Phase で学べること
+
+| テーマ | 学習内容 |
+|---|---|
+| **SQLインジェクション** | Webアプリ最大の脆弱性の仕組みと対策 |
+| **ホワイトリスト方式** | 許可された値のみ受け入れるセキュリティパターン |
+| **多層防御** | フロントエンド＋バックエンド＋DB層の3層防御 |
+| **Write-Behind キャッシュ** | 書き込みをバッファリングして遅延実行するパターン |
+| **バッチ INSERT** | 複数レコードを1回のSQL文で挿入する手法 |
+| **DBトランザクション** | ACID特性、トランザクションの使いどころ |
+| **グレースフルシャットダウン** | サーバー停止時にバッファデータを失わない方法 |
+
+---
+
+### 7.2 クエリパラメータバリデーション — SQLインジェクション対策
+
+#### 7.2.1 現状の問題点
+
+現在の `backend/src/models/productModel.js` の `findAll` 関数：
+
+```javascript
+// 現在のコード（問題あり）
+const sortField =
+  {
+    price: "p.price",
+    rating: "p.rating",
+    created_at: "p.created_at",
+  }[filters.sort] || "p.created_at";
+const sortOrder = filters.order === "desc" ? "DESC" : "ASC";
+query += ` ORDER BY ${sortField} ${sortOrder}`;
+```
+
+**良い点:** `sortField` はオブジェクトのキーマッチで制限されているため、`sort` パラメータ自体はある程度安全。
+
+**問題点:**
+1. **バリデーションがモデル層でしか行われていない** — 不正な値がコントローラーやサービス層を通過して到達する
+2. **`order` パラメータは "desc" 以外なら何でも "ASC" になる** — 不正な値（`order=xx:x;x`）がエラーにならず黙って通過する
+3. **`page`, `limit` にも文字列注入が可能** — `parseInt` で NaN になるケースの処理が不十分
+4. **`search` パラメータにXSSやSQLインジェクション文字列が入り得る**
+
+#### 7.2.2 SQLインジェクションとは？
+
+SQLインジェクションとは、**ユーザー入力を通じて意図しないSQLコマンドを注入する攻撃手法**です。
+
+```
+[正常] SELECT * FROM products ORDER BY price ASC
+                                       ↑ ユーザー入力
+
+[攻撃] SELECT * FROM products ORDER BY price; DROP TABLE products; -- ASC
+                                       ↑ ユーザーが悪意ある文字列を注入
+```
+
+| リスク | 具体例 |
+|---|---|
+| **データ漏洩** | 全ユーザーのメールアドレス・パスワードハッシュが流出 |
+| **データ改ざん** | 商品価格を0円に書き換え |
+| **データ削除** | テーブルごと削除（DROP TABLE） |
+| **権限昇格** | 一般ユーザーを管理者に昇格 |
+
+**防御の3原則:**
+
+| 手法 | 説明 | 本アプリでの実装 |
+|---|---|---|
+| **プリペアドステートメント** | `?` プレースホルダでパラメータをバインド | ✅ `mysql2` の `pool.query(sql, params)` で実装済み |
+| **ホワイトリスト** | 許可された値のみ受け入れる | ⬜ **今回追加する** |
+| **入力サニタイズ** | 危険な文字をエスケープ・除去 | ⬜ **今回追加する** |
+
+> **ポイント:** `mysql2` のプリペアドステートメントは `WHERE` 句の値（`?`）には有効ですが、`ORDER BY` や `LIMIT` のようなSQL構文の一部に変数を埋め込む場合は効きません。だからこそホワイトリスト方式が必要です。
+
+#### 7.2.3 ホワイトリスト方式の解説
+
+```
+❌ ブラックリスト方式: 「これは禁止」→ 未知の攻撃に弱い
+✅ ホワイトリスト方式: 「これだけ許可」→ 未知の攻撃にも強い
+```
+
+```javascript
+// ホワイトリストの例
+const ALLOWED_SORT_FIELDS = ["price", "rating", "created_at"];
+if (!ALLOWED_SORT_FIELDS.includes(userInput.sort)) {
+  throw new Error("不正なソートフィールド");
+}
+```
+
+これにより、`sort=id;DROP TABLE products` のような値は「ホワイトリストに無い」ため即座に拒否されます。
+
+#### 手順 5-1: クエリバリデータの作成
+
+##### ファイル: `backend/src/validators/queryValidator.js`（新規作成）
+
+```javascript
+/**
+ * クエリパラメータバリデーション
+ *
+ * 製品一覧APIに渡されるクエリパラメータを検証し、
+ * SQLインジェクションを防止する。
+ *
+ * 設計思想: ホワイトリスト方式
+ * → 明示的に許可された値のみ受け入れ、それ以外は全て拒否する
+ */
+
+// ========================================
+// ホワイトリスト定義
+// ========================================
+
+/**
+ * 許可されたソートフィールド
+ * キー: クエリパラメータの値 / 値: SQLで使用する実際のカラム名
+ * ※新しいソートフィールドを追加する場合はここに追加する
+ */
+const ALLOWED_SORT_FIELDS = {
+  price: "p.price",
+  rating: "p.rating",
+  created_at: "p.created_at",
+};
+
+/** 許可されたソート方向 */
+const ALLOWED_ORDER_DIRECTIONS = ["asc", "desc"];
+
+// ========================================
+// バリデーション関数
+// ========================================
+
+/**
+ * ソートフィールドのバリデーション
+ * 未指定の場合は "created_at" をデフォルト値として返す
+ */
+const validateSort = (sort) => {
+  if (sort === undefined || sort === null || sort === "") {
+    return { valid: true, error: null, value: "created_at" };
+  }
+  if (typeof sort !== "string") {
+    return { valid: false, error: "sortは文字列で指定してください", value: null };
+  }
+  const normalized = sort.toLowerCase().trim();
+  if (!ALLOWED_SORT_FIELDS[normalized]) {
+    const allowed = Object.keys(ALLOWED_SORT_FIELDS).join(", ");
+    return {
+      valid: false,
+      error: `不正なソートフィールドです。許可値: ${allowed}`,
+      value: null,
+    };
+  }
+  return { valid: true, error: null, value: normalized };
+};
+
+/**
+ * ソート方向のバリデーション
+ * 未指定の場合は "asc" をデフォルト値として返す
+ */
+const validateOrder = (order) => {
+  if (order === undefined || order === null || order === "") {
+    return { valid: true, error: null, value: "asc" };
+  }
+  if (typeof order !== "string") {
+    return { valid: false, error: "orderは文字列で指定してください", value: null };
+  }
+  const normalized = order.toLowerCase().trim();
+  if (!ALLOWED_ORDER_DIRECTIONS.includes(normalized)) {
+    return {
+      valid: false,
+      error: `不正なソート方向です。許可値: ${ALLOWED_ORDER_DIRECTIONS.join(", ")}`,
+      value: null,
+    };
+  }
+  return { valid: true, error: null, value: normalized };
+};
+
+/** ページ番号のバリデーション */
+const validatePage = (page) => {
+  if (page === undefined || page === null || page === "") {
+    return { valid: true, error: null, value: 1 };
+  }
+  const parsed = parseInt(page, 10);
+  if (isNaN(parsed)) {
+    return { valid: false, error: "pageは数値で指定してください", value: null };
+  }
+  if (parsed < 1) {
+    return { valid: false, error: "pageは1以上で指定してください", value: null };
+  }
+  if (parsed > 10000) {
+    return { valid: false, error: "pageは10000以下で指定してください", value: null };
+  }
+  return { valid: true, error: null, value: parsed };
+};
+
+/** 1ページあたりの件数バリデーション */
+const validateLimit = (limit) => {
+  if (limit === undefined || limit === null || limit === "") {
+    return { valid: true, error: null, value: 20 };
+  }
+  const parsed = parseInt(limit, 10);
+  if (isNaN(parsed)) {
+    return { valid: false, error: "limitは数値で指定してください", value: null };
+  }
+  if (parsed < 1) {
+    return { valid: false, error: "limitは1以上で指定してください", value: null };
+  }
+  if (parsed > 100) {
+    return { valid: false, error: "limitは100以下で指定してください", value: null };
+  }
+  return { valid: true, error: null, value: parsed };
+};
+
+/**
+ * 検索キーワードのサニタイズ
+ * FULLTEXT検索に使われるため、制御文字を除去する
+ */
+const validateSearch = (search) => {
+  if (search === undefined || search === null || search === "") {
+    return { valid: true, error: null, value: undefined };
+  }
+  if (typeof search !== "string") {
+    return { valid: false, error: "searchは文字列で指定してください", value: null };
+  }
+  if (search.length > 200) {
+    return { valid: false, error: "検索キーワードは200文字以内にしてください", value: null };
+  }
+  const sanitized = search.replace(/[\x00-\x1F]/g, "");
+  return { valid: true, error: null, value: sanitized };
+};
+
+/**
+ * 製品一覧クエリパラメータの一括バリデーション
+ * @param {Object} query - req.query（Express のクエリパラメータ）
+ * @returns {{ valid: boolean, errors: string[], sanitized: Object }}
+ */
+const validateProductListQuery = (query) => {
+  const errors = [];
+  const sanitized = {};
+
+  const sortResult = validateSort(query.sort);
+  if (!sortResult.valid) errors.push(sortResult.error);
+  else sanitized.sort = sortResult.value;
+
+  const orderResult = validateOrder(query.order);
+  if (!orderResult.valid) errors.push(orderResult.error);
+  else sanitized.order = orderResult.value;
+
+  const pageResult = validatePage(query.page);
+  if (!pageResult.valid) errors.push(pageResult.error);
+  else sanitized.page = pageResult.value;
+
+  const limitResult = validateLimit(query.limit);
+  if (!limitResult.valid) errors.push(limitResult.error);
+  else sanitized.limit = limitResult.value;
+
+  const searchResult = validateSearch(query.search);
+  if (!searchResult.valid) errors.push(searchResult.error);
+  else sanitized.search = searchResult.value;
+
+  if (query.category_id !== undefined) {
+    const catId = parseInt(query.category_id, 10);
+    if (isNaN(catId) || catId < 1) {
+      errors.push("category_idは正の整数で指定してください");
+    } else {
+      sanitized.category_id = catId;
+    }
+  }
+
+  if (query.min_price !== undefined) {
+    const minPrice = parseFloat(query.min_price);
+    if (isNaN(minPrice) || minPrice < 0) {
+      errors.push("min_priceは0以上の数値で指定してください");
+    } else {
+      sanitized.min_price = minPrice;
+    }
+  }
+
+  if (query.max_price !== undefined) {
+    const maxPrice = parseFloat(query.max_price);
+    if (isNaN(maxPrice) || maxPrice < 0) {
+      errors.push("max_priceは0以上の数値で指定してください");
+    } else {
+      sanitized.max_price = maxPrice;
+    }
+  }
+
+  if (query.is_featured !== undefined) {
+    if (query.is_featured !== "true" && query.is_featured !== "false") {
+      errors.push("is_featuredはtrue/falseで指定してください");
+    } else {
+      // 注意: 現行コードでは is_featured === "false" 時に undefined を返していたが、
+      // ここでは boolean false を返す。これにより ?is_featured=false で
+      // 「おすすめでない製品」のフィルターが正しく機能するようになる（動作変更）
+      sanitized.is_featured = query.is_featured === "true";
+    }
+  }
+
+  return { valid: errors.length === 0, errors, sanitized };
+};
+
+module.exports = {
+  ALLOWED_SORT_FIELDS,
+  ALLOWED_ORDER_DIRECTIONS,
+  validateSort,
+  validateOrder,
+  validatePage,
+  validateLimit,
+  validateSearch,
+  validateProductListQuery,
+};
+```
+
+**コード解説:**
+- `ALLOWED_SORT_FIELDS` はオブジェクト形式で、フロントエンドが送る値（`price`）とSQLカラム名（`p.price`）のマッピングを兼ねる
+- 各関数は `{ valid, error, value }` の統一フォーマットを返す（他のバリデーターと同じ規則）
+- `validateProductListQuery` は複数のエラーをまとめて返せるため、ユーザーが一度で全問題を把握できる
+
+#### 手順 5-2: バリデーションミドルウェアの作成
+
+##### ファイル: `backend/src/middlewares/validateQuery.js`（新規作成）
+
+```javascript
+const { validateProductListQuery } = require("../validators/queryValidator");
+
+/**
+ * 製品一覧クエリパラメータのバリデーションミドルウェア
+ *
+ * 役割:
+ * 1. req.query のパラメータをバリデーション
+ * 2. バリデーション済みの値を req.validatedQuery に格納
+ * 3. エラーがあれば 400 Bad Request を返す
+ *
+ * これにより、コントローラー以降は req.validatedQuery を使うだけで安全
+ */
+const validateProductQuery = (req, res, next) => {
+  const result = validateProductListQuery(req.query);
+
+  if (!result.valid) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: "INVALID_QUERY_PARAMETER",
+        message: "クエリパラメータが不正です",
+        details: result.errors,
+      },
+    });
+  }
+
+  // バリデーション済みの安全な値を req に追加
+  req.validatedQuery = result.sanitized;
+  next();
+};
+
+module.exports = { validateProductQuery };
+```
+
+**ポイント:**
+- `req.validatedQuery` にサニタイズ済みの値を格納。`req.query`（生の値）を使わせないのが重要
+- エラー時は `next()` を呼ばず 400 レスポンスを返して打ち切る
+
+#### 手順 5-3: ルーターへのミドルウェア適用
+
+##### ファイル: `backend/src/routes/products.js`（修正）
+
+```javascript
+const express = require("express");
+const { authenticate } = require("../middlewares/authMiddleware");
+const { validateProductQuery } = require("../middlewares/validateQuery");
+const {
+  getCategories,
+  getProducts,
+  getProductDetail,
+  postProduct,
+  putProduct,
+  deleteProductHandler,
+  getPopularProductsHandler,
+} = require("../controllers/productController");
+
+const router = express.Router();
+
+router.get("/categories", getCategories);
+router.get("/popular", getPopularProductsHandler);
+
+// ↓↓↓ 変更: validateProductQuery ミドルウェアを追加
+router.get("/", validateProductQuery, getProducts);
+router.post("/", postProduct);
+router.get("/:id", authenticate, getProductDetail);
+router.put("/:id", putProduct);
+router.delete("/:id", deleteProductHandler);
+
+module.exports = router;
+```
+
+**Express ミドルウェアチェーン:**
+```
+router.get("/", validateProductQuery, getProducts);
+                ↑ まずこれが実行         ↑ next()が呼ばれたら実行
+```
+
+#### 手順 5-4: コントローラーの修正
+
+##### ファイル: `backend/src/controllers/productController.js`（修正）
+
+```javascript
+// 製品一覧(フィルター・ページング)
+const getProducts = async (req, res, next) => {
+  try {
+    // ↓↓↓ 変更: req.query → req.validatedQuery（ミドルウェアでバリデーション済み）
+    const filters = req.validatedQuery;
+
+    const result = await listProducts(filters);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+```
+
+**なぜこの変更が重要か:**
+- コントローラーの責務が「バリデーション＋ビジネスロジック呼び出し」から「ビジネスロジック呼び出しのみ」に軽量化
+- `parseInt` / `parseFloat` の重複処理がなくなる（バリデータで済んでいるため）
+- `req.query` を直接触らないため、バリデーション漏れの危険がゼロ
+
+#### 手順 5-5: モデル層の防御強化
+
+##### ファイル: `backend/src/models/productModel.js`（修正）
+
+多層防御（Defense in Depth）のため、モデル層もホワイトリストをインポートして使用します。
+
+```javascript
+// ファイル先頭に追加
+const { ALLOWED_SORT_FIELDS } = require("../validators/queryValidator");
+
+// findAll 関数内のソート部分を修正
+  const sortField = ALLOWED_SORT_FIELDS[filters.sort] || "p.created_at";
+  const sortOrder = filters.order === "desc" ? "DESC" : "ASC";
+  query += ` ORDER BY ${sortField} ${sortOrder}`;
+```
+
+#### 手順 5-6: エラーミドルウェアの拡張
+
+##### ファイル: `backend/src/middlewares/error.js`（修正）
+
+```javascript
+  // 特定のエラーメッセージから適切なステータスコードを判定
+  if (message.includes("not found") || message.includes("見つかりません")) {
+    statusCode = 404;
+    errorCode = "NOT_FOUND";
+  } else if (
+    message.includes("必須") ||
+    message.includes("invalid") ||
+    message.includes("0以上") ||
+    message.includes("範囲") ||
+    message.includes("不正な") ||    // ← 追加
+    message.includes("許可値")       // ← 追加
+  ) {
+    statusCode = 400;
+    errorCode = "VALIDATION_ERROR";
+  }
+```
+
+> **補足:** 通常、クエリバリデーションエラーは `validateProductQuery` ミドルウェアが直接 400 を返すためこの `errorHandler` には到達しません。ここでの追加は、Service/Model 層で直接 queryValidator を使用した場合の**多層防御（予防的措置）**です。
+
+#### 手順 5-7: 動作確認
+
+以下のテストケースを `backend/requests.http` の末尾に追加して確認します：
+
+```http
+### ==============================
+### クエリバリデーションテスト
+### ==============================
+
+### 正常: ソートと方向を指定
+GET {{baseUrl}}/products?sort=price&order=asc
+
+### 正常: デフォルト値で取得
+GET {{baseUrl}}/products
+
+### 異常: 不正なソートフィールド（400エラーを期待）
+GET {{baseUrl}}/products?sort=id;DROP TABLE products
+
+### 異常: 不正なソート方向（400エラーを期待）
+GET {{baseUrl}}/products?order=xx:x;x
+
+### 異常: 不正なページ番号（400エラーを期待）
+GET {{baseUrl}}/products?page=-1
+
+### 異常: limit超過（400エラーを期待）
+GET {{baseUrl}}/products?limit=99999
+
+### 異常: 複合エラー（複数のエラーが返ることを確認）
+GET {{baseUrl}}/products?sort=invalid&order=xxx&page=-1
+```
+
+期待されるエラーレスポンス例：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_QUERY_PARAMETER",
+    "message": "クエリパラメータが不正です",
+    "details": [
+      "不正なソートフィールドです。許可値: price, rating, created_at",
+      "不正なソート方向です。許可値: asc, desc",
+      "pageは1以上で指定してください"
+    ]
+  }
+}
+```
+
+**セキュリティチェックリスト:**
+
+- [ ] `GET /api/products?sort=price&order=desc` → 正常に製品一覧が返る
+- [ ] `GET /api/products?sort=xxx` → 400エラー
+- [ ] `GET /api/products?order=xxx` → 400エラー
+- [ ] `GET /api/products?page=abc` → 400エラー
+- [ ] `GET /api/products?sort=id;DROP TABLE products` → 400エラー
+- [ ] Dashboard の「新着を見る」「高評価を見る」リンクが正常動作
+
+---
+
+### 7.3 閲覧履歴キャッシュ — Write-Behind パターン
+
+#### 7.3.1 キャッシュとは何か？
+
+**キャッシュ (Cache)** とは、「頻繁にアクセスされるデータや、すぐに処理する必要のないデータを一時的に保存する仕組み」です。
+
+```
+📚 図書館の例:
+  - 本棚（DB）: 10万冊の蔵書がある。探すのに時間がかかる
+  - 机の上（キャッシュ）: よく使う5冊を手元に置いておく。すぐ取れる
+
+🛒 スーパーのレジの例:
+  - 1個ずつ精算（毎回DB書き込み）: 客が来るたびに1個ずつレジを打つ
+  - まとめて精算（バッチ書き込み）: カゴに10個溜めてから一括精算 → 効率的
+```
+
+**キャッシュの分類:**
+
+```
+【読み取りキャッシュ (Read Cache)】
+  目的: DBからの読み取り回数を減らす
+  クライアント → キャッシュ → あれば返す → なければDB問い合わせ
+
+【書き込みキャッシュ (Write Cache)】← 今回はこれ
+  目的: DBへの書き込み回数を減らす
+  クライアント → メモリバッファ → 定期的にDB一括書込
+```
+
+今回採用するのは **Write-Behind (Write-Back) キャッシュ** パターンです：
+
+```
+【従来: Write-Through（現行コード）】
+  リクエスト1 → INSERT INTO product_views ... → DB
+  リクエスト2 → INSERT INTO product_views ... → DB
+  リクエスト3 → INSERT INTO product_views ... → DB
+  → DBへの書き込み: 3回
+
+【改善: Write-Behind（今回の実装）】
+  リクエスト1 → メモリバッファに追加
+  リクエスト2 → メモリバッファに追加
+  リクエスト3 → メモリバッファに追加
+  (30秒経過) → INSERT INTO product_views VALUES (...),(...),(...) → DB
+  → DBへの書き込み: 1回
+```
+
+| 項目 | メリット | リスク |
+|---|---|---|
+| **パフォーマンス** | DB書き込み回数が大幅に減る | — |
+| **レスポンス** | APIレスポンスがDB書き込みを待たない | — |
+| **コネクション** | DB接続プールの枯渇を防ぐ | — |
+| **データ損失** | — | サーバークラッシュ時にバッファ内データが失われる |
+| **即時性** | — | データがDBに反映されるまで最大30秒の遅延 |
+
+> **このアプリにおける判断:** 閲覧履歴は「統計的データ」であり、数件の欠損は許容できます。一方、注文データやユーザー認証データにこのパターンを適用するのは**絶対にNG**です。
+
+#### 7.3.2 現状の問題
+
+現在の `productService.getProduct()` は、製品詳細を取得するたびに `INSERT INTO product_views` を実行しています：
+
+```javascript
+// backend/src/services/productService.js（現行コード）
+const getProduct = async (id, userId = null, ipAddress = null) => {
+  const product = await productModel.findById(id);    // SELECT（読み取り）
+  if (!product) throw new Error("Product not found");
+  try {
+    await productModel.recordView(id, userId, ipAddress);  // ← 毎回INSERT
+  } catch (err) {
+    console.error("Failed to record view:", err);
+  }
+  return product;
+};
+```
+
+#### 7.3.3 キャッシュ戦略の比較
+
+| 戦略 | 概要 | メリット | デメリット | 適用場面 |
+|---|---|---|---|---|
+| **A: インメモリ配列** | Node.js の配列にバッファ | 依存なし、シンプル | プロセス再起動で消失 | **今回採用** |
+| **B: node-cache** | npmパッケージ使用 | TTL管理が楽 | 追加依存 | 読み取りキャッシュ向き |
+| **C: Redis** | 外部キャッシュサーバー | 永続化、複数プロセス共有 | インフラ追加 | 大規模アプリ |
+
+今回「A: インメモリ配列」を選ぶ理由：外部依存ゼロ、学習に最適、閲覧履歴の欠損許容性に合致、コネクションプールを圧迫しない。
+
+#### 手順 5-8: ViewCache モジュールの作成
+
+> **注意:** 手順 5-8 と手順 5-9 は相互依存しています。`viewCache.js` 内で `productModel.batchRecordViews` を呼び出しますが、この関数は手順 5-9 で追加します。両方を完了してから動作確認してください。
+
+##### ファイル: `backend/src/utils/viewCache.js`（新規作成）
+
+```javascript
+/**
+ * 閲覧履歴キャッシュ（Write-Behind パターン）
+ *
+ * 【仕組み】
+ * 1. recordView() でメモリバッファに閲覧データを追加
+ * 2. 一定間隔（FLUSH_INTERVAL_MS）でバッファをDBに一括書き込み
+ * 3. サーバー終了時にグレースフルシャットダウンで残データを書き込み
+ *
+ * 【なぜシングルトンか？】
+ * Node.js の require() はモジュールをキャッシュするため、
+ * どのファイルから require("./utils/viewCache") しても
+ * 同じインスタンスが返されます。これにより「バッファが1つだけ
+ * 存在する」ことが自然に保証されます。
+ */
+
+const productModel = require("../models/productModel");
+
+// --- 設定 ---
+const FLUSH_INTERVAL_MS = 30 * 1000; // 30秒ごとにDBへ書き込み
+const MAX_BUFFER_SIZE = 1000;         // バッファ最大件数（メモリ保護）
+
+// --- 内部状態 ---
+let buffer = [];       // { productId, userId, ipAddress, viewedAt }
+let flushTimer = null; // setInterval の参照
+let isFlushing = false; // flush 中の重複実行防止フラグ
+
+/**
+ * 閲覧データをバッファに追加する（同期処理、DBアクセスなし）
+ */
+const recordView = (productId, userId = null, ipAddress = null) => {
+  buffer.push({
+    productId,
+    userId,
+    ipAddress,
+    viewedAt: new Date(),
+  });
+
+  // メモリ保護: バッファが上限に達したら即フラッシュ
+  if (buffer.length >= MAX_BUFFER_SIZE) {
+    console.log(
+      `[ViewCache] バッファが上限(${MAX_BUFFER_SIZE}件)に達しました。即座にフラッシュします`,
+    );
+    flush();
+  }
+};
+
+/**
+ * バッファの内容をDBに一括書き込みする
+ *
+ * 【バッファスワップ方式】
+ * flush中に新しいデータが追加されても安全なように、
+ * 最初にバッファを切り離してから処理する
+ */
+const flush = async () => {
+  if (isFlushing) return;  // 重複実行防止
+  if (buffer.length === 0) return;
+
+  isFlushing = true;
+
+  // バッファをスワップ（切り離し）
+  const currentBuffer = buffer;
+  buffer = [];  // 新しい空配列を割り当て → flush中の新データは次回処理
+
+  try {
+    await productModel.batchRecordViews(currentBuffer);
+    console.log(
+      `[ViewCache] ${currentBuffer.length}件の閲覧履歴をDBに書き込みました`,
+    );
+  } catch (err) {
+    console.error("[ViewCache] バッチINSERT失敗:", err.message);
+    // 失敗データは破棄（バッファに戻すとメモリリーク・無限ループのリスク）
+  } finally {
+    isFlushing = false;
+  }
+};
+
+/** 定期フラッシュタイマーを開始（サーバー起動時に1回だけ呼ぶ） */
+const startFlushTimer = () => {
+  if (flushTimer) {
+    console.warn("[ViewCache] フラッシュタイマーは既に起動しています");
+    return;
+  }
+  flushTimer = setInterval(flush, FLUSH_INTERVAL_MS);
+  // unref(): このタイマーだけが残った場合、Node.jsプロセスの終了を妨げない
+  flushTimer.unref();
+  console.log(
+    `[ViewCache] フラッシュタイマー開始（${FLUSH_INTERVAL_MS / 1000}秒間隔）`,
+  );
+};
+
+/** タイマーを停止し、残りのバッファをフラッシュ（シャットダウン時に呼ぶ） */
+const stopFlushTimer = async () => {
+  if (flushTimer) {
+    clearInterval(flushTimer);
+    flushTimer = null;
+    console.log("[ViewCache] フラッシュタイマー停止");
+  }
+  if (buffer.length > 0) {
+    console.log(
+      `[ViewCache] シャットダウン: 残り${buffer.length}件をフラッシュ中...`,
+    );
+    await flush();
+  }
+};
+
+/** 現在のバッファサイズを取得（モニタリング・テスト用） */
+const getBufferSize = () => buffer.length;
+
+module.exports = {
+  recordView,
+  flush,
+  startFlushTimer,
+  stopFlushTimer,
+  getBufferSize,
+};
+```
+
+**バッファスワップ方式の解説:**
+
+```javascript
+// ❌ 悪い例: バッファを直接操作
+const flush = async () => {
+  const data = buffer;   // 参照をコピー（同じ配列を指す）
+  buffer.length = 0;     // 元配列をクリア → dataも空になる！
+  await model.insert(data); // 空配列を挿入してしまう
+};
+
+// ✅ 良い例: バッファをスワップ
+const flush = async () => {
+  const currentBuffer = buffer; // 現在の配列の参照を保存
+  buffer = [];                  // 新しい空配列を割り当て
+  // currentBuffer は古い配列を指したまま → 安全にDB書き込みできる
+  await model.insert(currentBuffer);
+};
+```
+
+#### 手順 5-9: productModel にバッチ INSERT 関数を追加
+
+##### ファイル: `backend/src/models/productModel.js`（修正 — 関数追加）
+
+既存の `recordView` はそのまま残し（互換性維持）、新しく `batchRecordViews` を追加します。
+
+```javascript
+/**
+ * 閲覧履歴をバッチINSERTする
+ *
+ * 【なぜ viewed_at を明示指定するのか？】
+ * 既存の recordView は INSERT 時刻 = 閲覧時刻だが、
+ * バッチ INSERT では INSERT 時刻 ≠ 閲覧時刻になるため、
+ * バッファに追加した時刻（= 実際の閲覧時刻）を viewedAt として明示的に保存する。
+ *
+ * 【バッチINSERTとは？】
+ * 通常: INSERT INTO table VALUES (1, 'a'); × 3回 → 3回のネットワーク往復
+ * バッチ: INSERT INTO table VALUES (1, 'a'), (2, 'b'), (3, 'c'); → 1回
+ */
+const batchRecordViews = async (views) => {
+  if (!views || views.length === 0) return 0;
+
+  const placeholders = views.map(() => "(?, ?, ?, ?)").join(", ");
+  const params = views.flatMap((v) => [
+    v.productId,
+    v.userId,
+    v.ipAddress,
+    v.viewedAt,
+  ]);
+
+  const query = `
+    INSERT INTO product_views (product_id, user_id, ip_address, viewed_at)
+    VALUES ${placeholders}
+  `;
+
+  const [result] = await pool.query(query, params);
+  return result.affectedRows;
+};
+```
+
+**module.exports に `batchRecordViews` を追加:**
+
+```javascript
+module.exports = {
+  findAll,
+  countAll,
+  findById,
+  create,
+  update,
+  deleteById,
+  findPopular,
+  recordView,        // ← 既存（互換性維持）
+  batchRecordViews,  // ← 新規追加
+};
+```
+
+#### 手順 5-10: productService の修正
+
+##### ファイル: `backend/src/services/productService.js`（修正）
+
+```javascript
+// ファイル先頭に追加
+const viewCache = require("../utils/viewCache");
+
+// getProduct 関数を修正
+const getProduct = async (id, userId = null, ipAddress = null) => {
+  const product = await productModel.findById(id);
+  if (!product) throw new Error("Product not found");
+
+  // ↓↓↓ 修正: DB直接INSERTからメモリバッファに変更（同期処理、await不要）
+  viewCache.recordView(id, userId, ipAddress);
+
+  return product;
+};
+```
+
+**変更の本質:**
+
+```
+【修正前】 getProduct() → await productModel.recordView() → DB INSERT（~3ms）
+【修正後】 getProduct() → viewCache.recordView() → 配列にpush（~0.01ms）
+           → 30秒後にバックグラウンドでまとめてDB書き込み
+```
+
+#### 手順 5-11: サーバーにグレースフルシャットダウン追加
+
+##### ファイル: `backend/src/server.js`（修正）
+
+```javascript
+require("dotenv").config();
+const app = require("./app");
+const viewCache = require("./utils/viewCache");
+
+const port = process.env.PORT || 3000;
+
+const server = app.listen(port, () => {
+  console.log(`API server listening on port ${port}`);
+  // 閲覧履歴キャッシュのフラッシュタイマーを開始
+  viewCache.startFlushTimer();
+});
+
+/**
+ * グレースフルシャットダウン
+ *
+ * サーバーを停止する際に「優雅に」終了すること:
+ * 1. 新しいリクエストの受付を停止
+ * 2. 処理中のリクエストが完了するまで待機
+ * 3. バッファに溜まったデータをDBに書き込む
+ * 4. プロセスを終了
+ */
+const gracefulShutdown = async (signal) => {
+  console.log(`\n${signal} を受信。グレースフルシャットダウンを開始します...`);
+
+  server.close(async () => {
+    console.log("HTTPサーバーを停止しました");
+    try {
+      await viewCache.stopFlushTimer();
+      console.log("閲覧履歴キャッシュのフラッシュが完了しました");
+    } catch (err) {
+      console.error("シャットダウン中のエラー:", err);
+    }
+    process.exit(0);
+  });
+
+  // タイムアウト（10秒以内に終了しなければ強制終了）
+  setTimeout(() => {
+    console.error("シャットダウンタイムアウト。強制終了します");
+    process.exit(1);
+  }, 10000);
+};
+
+// SIGTERM: docker stop, kill コマンドなど（正常終了要求）
+// SIGINT:  Ctrl+C（ターミナルからの割り込み）
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+```
+
+**アプリケーションのライフサイクル全体像:**
+
+```
+【起動】
+  node src/server.js
+    → dotenv.config()                      環境変数読み込み
+    → app.listen(port)                     HTTPサーバー起動
+    → viewCache.startFlushTimer()          30秒タイマー開始
+
+【稼働中】
+  GET /api/products/1
+    → productModel.findById(1)             DB読み取り
+    → viewCache.recordView(1, userId, ip)  メモリに追加（0ms）
+    → res.json(product)
+
+  ... 30秒経過 ...
+  [setInterval発火]
+    → viewCache.flush()
+    → productModel.batchRecordViews(buffer)  DB一括書き込み
+
+【停止】
+  Ctrl+C (SIGINT)
+    → server.close()                        新規リクエスト停止
+    → viewCache.stopFlushTimer()            タイマー停止 + 残りフラッシュ
+    → process.exit(0)                       正常終了
+```
+
+#### 7.3.4 トランザクションとバッチINSERTの関係
+
+**トランザクション (Transaction)** とは、複数のDB操作をひとまとまりとして扱い、すべて成功 or すべて失敗を保証する仕組みです。
+
+| 特性 | 英語 | 意味 |
+|---|---|---|
+| **A** | Atomicity (原子性) | 全部成功 or 全部失敗 |
+| **C** | Consistency (一貫性) | 整合性が保たれる |
+| **I** | Isolation (分離性) | 同時実行が干渉しない |
+| **D** | Durability (永続性) | 確定したら消えない |
+
+**今回のバッチINSERTにトランザクションは不要:**
+1. 操作が「1つのINSERT文」だけ → 単一SQL文はMySQL内部で自動的にトランザクション処理される
+2. 閲覧履歴は部分的な成功/失敗が許容される
+3. 他のテーブルとの整合性が不要
+
+**トランザクションが必要な場面（参考）:**
+
+```javascript
+// 例: 注文処理（トランザクションが必須）
+const createOrder = async (userId, items) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // 1. 注文作成  2. 明細作成  3. 在庫減少
+    await connection.commit();            // 全部成功 → 確定
+  } catch (err) {
+    await connection.rollback();          // 1つでも失敗 → 全部取り消し
+    throw err;
+  } finally {
+    connection.release();
+  }
+};
+```
+
+#### 手順 5-12: キャッシュの動作確認
+
+| テスト | 操作 | 期待結果 |
+|---|---|---|
+| **基本動作** | 製品詳細を5回閲覧 → 30秒待機 | コンソールに `5件の閲覧履歴をDBに書き込みました` |
+| **バッファ空** | 30秒間閲覧なし | フラッシュがスキップされる（ログ出力なし） |
+| **グレースフル終了** | 製品を閲覧 → Ctrl+C | `シャットダウン: 残りN件をフラッシュ中...` |
+| **DB確認** | テスト後 | `SELECT COUNT(*) FROM product_views` が期待件数 |
+
+```http
+### 製品詳細を閲覧（閲覧を記録）
+GET http://localhost:3000/api/products/1
+Authorization: Bearer {{token}}
+
+### 少し待ってから人気製品を確認（閲覧数が反映されているか）
+GET http://localhost:3000/api/products/popular?limit=5
+```
+
+**パフォーマンス比較:**
+
+```
+【変更前: productService.getProduct()】
+  1. productModel.findById(id)      →  1回のSELECT（~5ms）
+  2. productModel.recordView(...)   →  1回のINSERT（~3ms）
+  合計レスポンス時間: ~8ms / DB操作: 2回/リクエスト
+
+【変更後: productService.getProduct()】
+  1. productModel.findById(id)      →  1回のSELECT（~5ms）
+  2. viewCache.recordView(...)      →  配列にpush（~0.01ms）
+  合計レスポンス時間: ~5ms（37.5%高速化）/ DB操作: 1回/リクエスト + 1回/30秒
+```
+
+**Phase 5 完了！** セキュリティ強化とパフォーマンス最適化が完了しました。全フェーズのバックエンド構築が完了しました。
+
+---
+
+## 8. APIエンドポイント一覧
 
 ### 認証API
 
@@ -2837,7 +3817,7 @@ curl -s -X POST http://localhost:3000/api/auth/logout \
 
 ---
 
-## 8. 動作確認方法
+## 9. 動作確認方法
 
 ### 方法1: curlコマンド
 
@@ -2945,7 +3925,7 @@ DELETE http://localhost:3000/api/products/2
 
 ---
 
-## 9. トラブルシューティング
+## 10. トラブルシューティング
 
 ### 問題 1: "Cannot find module" エラー
 
@@ -3125,6 +4105,9 @@ CMD ["npm", "start"]
 | バリデーション | 入力値検証の実装パターン（統一インターフェース） |
 | ページネーション | 大量データの分割取得パターン |
 | 動的クエリ構築 | WHERE 1=1 + 条件追加パターン |
+| クエリバリデーション | ホワイトリスト方式によるクエリパラメータの安全な検証 |
+| Write-Behindキャッシュ | メモリバッファ＋定期バッチINSERTによるDB負荷軽減 |
+| グレースフルシャットダウン | サーバー停止時のデータ保全処理 |
 
 ### 次のステップ
 

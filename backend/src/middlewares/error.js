@@ -9,7 +9,7 @@ const notFoundHandler = (req, res) => {
 
 /**
  * グローバルエラーハンドリングミドルウェア（拡張版）
- * 
+ *
  * 全てのエラーを統一されたJSON形式で返す
  */
 const errorHandler = (err, req, res, next) => {
@@ -27,7 +27,9 @@ const errorHandler = (err, req, res, next) => {
     message.includes("必須") ||
     message.includes("invalid") ||
     message.includes("0以上") ||
-    message.includes("範囲")
+    message.includes("範囲") ||
+    message.includes("不正な") ||
+    message.includes("許可値")
   ) {
     statusCode = 400;
     errorCode = "VALIDATION_ERROR";
